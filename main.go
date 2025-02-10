@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"gofs/handlers"
-	"io"
+	"gofs/models"
 	"log"
 	"os"
 
@@ -13,6 +15,11 @@ import (
 
 func main() {
 
+	// 获取port参数,如果没有则默认使用8080
+	port := flag.Int("port", 8080, "使用-port=8080设置服务启动参数")
+	// 执行解析参数
+	flag.Parse()
+
 	// 打开日志文件
 	file, err := os.OpenFile("./access.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
@@ -20,48 +27,45 @@ func main() {
 	}
 	defer file.Close()
 
+	// 构建一个fiber实例
 	app := fiber.New()
+
+	// 配置日志
 	app.Use(logger.New(logger.Config{
-		Output: &MultiWriter{
-			writers: []io.Writer{os.Stdout, file},
-		},
+		Output:     models.NewMultiWrite(os.Stdout, file),
 		TimeFormat: "2006-01-02 15:04:05", // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
 		Format:     "${time} | ${status} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
 	}))
+
+	// 避免意外导致程序退出
 	app.Use(recover.New())
 
+	// 映射一个静态资源目录
 	app.Static("/static", "./static", fiber.Static{
 		Browse: true,
 	})
 
+	// 默认的路由
 	app.Get("/", func(c *fiber.Ctx) error {
 		//return c.SendFile("./static/index.html")
 		return c.SendString("Hello, World!")
 	})
 
+	// user路由
 	userGroup := app.Group("/user")
 	userGroup.Get("/list", handlers.GetUsers)
 	userGroup.Post("/create", handlers.CreateUser)
 
-	if err := app.Listen(":8080"); err != nil {
+	// 每日文件数量统计路由
+	app.All("/todayFileTotal", handlers.TodayFileTotal)
+
+	// 此处port是一个指针, 访问对应的值需要使用*port
+	address := fmt.Sprintf(":%d", *port)
+	log.Printf("listen address:%s", address)
+	if err := app.Listen(address); err != nil {
 		panic(err)
 	} else {
 		log.Printf("Listening on port 8080")
 	}
 
-}
-
-// 定义一个结构实现io.Writer接口
-type MultiWriter struct {
-	writers []io.Writer
-}
-
-func (mw *MultiWriter) Write(p []byte) (n int, err error) {
-	for _, w := range mw.writers {
-		n, err = w.Write(p)
-		if err != nil {
-			return n, err
-		}
-	}
-	return len(p), nil
 }
