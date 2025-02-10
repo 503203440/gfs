@@ -18,6 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
 	app := fiber.New()
 	app.Use(logger.New(logger.Config{
