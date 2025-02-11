@@ -15,36 +15,25 @@ import (
 
 func main() {
 
+	LogFile, accessLogFile := initLogs("./gofs.log", "./access.log")
+	// main函数结束时释放文件
+	defer accessLogFile.Close()
+	defer LogFile.Close()
+
 	// 获取port参数,如果没有则默认使用8080
 	port := flag.Int("port", 8080, "使用-port=8080设置服务启动参数")
 	// 执行解析参数
 	flag.Parse()
-
-	// 打开日志文件
-	file, err := os.OpenFile("./access.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
 
 	// 构建一个fiber实例
 	app := fiber.New()
 
 	// 配置fiber的http请求日志
 	app.Use(logger.New(logger.Config{
-		Output:     models.NewMultiWrite(file), // 打印到文件
-		TimeFormat: "2006-01-02 15:04:05",      // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
+		Output:     models.NewMultiWrite(accessLogFile), // 打印到文件
+		TimeFormat: "2006-01-02 15:04:05",               // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
 		Format:     "${time} | ${status} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
 	}))
-
-	// 创建日志文件
-	gofsLogFile, err := os.OpenFile("./gofs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		panic("创建系统日志文件失败!" + err.Error())
-	}
-	defer gofsLogFile.Close()
-	log.SetOutput(models.NewMultiWrite(gofsLogFile, os.Stdout)) // 系统日志打印到文件和控制台
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)        // 设置输出格式
 
 	// 避免意外导致程序退出
 	app.Use(recover.New())
@@ -83,4 +72,20 @@ func main() {
 		panic(err)
 	}
 
+}
+
+func initLogs(logFilePath, accessLogFilePath string) (*os.File, *os.File) {
+	gofsLogFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		panic("创建系统日志文件失败: " + err.Error())
+	}
+	log.SetOutput(models.NewMultiWrite(gofsLogFile, os.Stdout))
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	accessLogfile, err := os.OpenFile(accessLogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		panic("创建访问日志文件失败: " + err.Error())
+	}
+
+	return gofsLogFile, accessLogfile
 }
