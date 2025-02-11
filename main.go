@@ -30,15 +30,27 @@ func main() {
 	// 构建一个fiber实例
 	app := fiber.New()
 
-	// 配置日志
+	// 配置fiber的http请求日志
 	app.Use(logger.New(logger.Config{
-		Output:     models.NewMultiWrite(os.Stdout, file),
-		TimeFormat: "2006-01-02 15:04:05", // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
+		Output:     models.NewMultiWrite(file), // 打印到文件
+		TimeFormat: "2006-01-02 15:04:05",      // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
 		Format:     "${time} | ${status} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
 	}))
 
+	// 创建日志文件
+	gofsLogFile, err := os.OpenFile("./gofs.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		panic("创建系统日志文件失败!" + err.Error())
+	}
+	defer gofsLogFile.Close()
+	log.SetOutput(models.NewMultiWrite(gofsLogFile, os.Stdout)) // 系统日志打印到文件和控制台
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)        // 设置输出格式
+
 	// 避免意外导致程序退出
 	app.Use(recover.New())
+
+	// 分析性能
+	// app.Use(pprof.New())
 
 	// 映射一个静态资源目录
 	app.Static("/static", "./static", fiber.Static{
@@ -50,6 +62,11 @@ func main() {
 		//return c.SendFile("./static/index.html")
 		return c.SendString("Hello, World!")
 	})
+
+	// 内存路由
+	memGroup := app.Group("/mem")
+	memGroup.Get("/info", handlers.MemInfo)
+	memGroup.Get("/gc", handlers.Gc)
 
 	// user路由
 	userGroup := app.Group("/user")
@@ -64,8 +81,6 @@ func main() {
 	log.Printf("listen address:%s", address)
 	if err := app.Listen(address); err != nil {
 		panic(err)
-	} else {
-		log.Printf("Listening on port 8080")
 	}
 
 }
