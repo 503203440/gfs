@@ -1,10 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>gofs</title>
+    <script type="application/javascript" src="/static/vue.global.min.js"></script>
 </head>
+
 <body>
-gofs
+    <div id="app">
+        {{tips}}
+    </div>
 </body>
+
 </html>
+<script type="application/javascript">
+    const { createApp } = Vue
+    const app = createApp({
+        data() {
+            return {
+                tips: "gofs is running"
+            }
+        }
+    })
+    app.mount("#app")
+</script>

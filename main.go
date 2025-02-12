@@ -48,19 +48,16 @@ func main() {
 
 	// 默认的路由
 	app.Get("/", func(c *fiber.Ctx) error {
-		//return c.SendFile("./static/index.html")
-		return c.SendString("Hello, World!")
+		return c.SendFile("./static/index.html")
+		// return c.SendString("Hello, World!")
 	})
 
-	// 内存路由
+	// 内存信息路由
 	memGroup := app.Group("/mem")
 	memGroup.Get("/info", handlers.MemInfo)
 	memGroup.Get("/gc", handlers.Gc)
-
-	// user路由
-	userGroup := app.Group("/user")
-	userGroup.Get("/list", handlers.GetUsers)
-	userGroup.Post("/create", handlers.CreateUser)
+	// cpu信息路由
+	app.All("/cpuInfo", handlers.CpuInfo)
 
 	// 每日文件数量统计路由
 	app.All("/todayFileTotal", handlers.TodayFileTotal)
