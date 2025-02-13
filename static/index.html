@@ -4,25 +4,80 @@
 <head>
     <meta charset="UTF-8">
     <title>gfs</title>
-    <script type="application/javascript" src="/static/vue.global.min.js"></script>
     <script src="/static/echarts.min.js"></script>
 </head>
 
 <body>
-    <div id="app">
-        {{tips}}
+    <div style="display: flex;">
+        <div id="sysCpu" style="width: 600px;height: 337px;">
+
+        </div>
     </div>
 </body>
 
 </html>
 <script type="application/javascript">
-    const { createApp } = Vue
-    const app = createApp({
-        data() {
-            return {
-                tips: "gfs is running"
+    const cpuOption = {
+        title: {
+            text: 'cpu'
+        },
+        xAxis: {
+            type: 'time',
+            axisLabel: {
+                interval: 40,
+                rotate: 45
             }
-        }
-    })
-    app.mount("#app")
+            ,
+            splitLine: {
+                show: false
+            }
+        },
+        yAxis: {
+            type: 'value',
+            // boundaryGap: [0, '100%'],
+            min: 0,
+            max: 100,
+            splitLine: {
+                show: false
+            }
+        },
+        series: [
+            {
+                name: 'cpuInfo',
+                type: 'line',
+                data: []
+            }
+        ]
+    }
+    const cpuChart = echarts.init(document.getElementById('sysCpu'));
+    cpuChart.setOption(cpuOption)
+
+    /**
+     * 获取系统信息并渲染到echarts图表
+     */
+    function getSysInfo() {
+        fetch('/cpuInfo').then(res => res.json()).then(res => {
+            console.log(res)
+            let array = []
+            res?.forEach(i => {
+                array.push({
+                    name: 'cpuLoad',
+                    value: [i.time, i.cpuLoad]
+                })
+            })
+            cpuChart.setOption({
+                series: [
+                    {
+                        data: array
+                    }
+                ]
+            })
+        })
+    }
+
+    // 定时执行
+    setInterval(() => {
+        this.getSysInfo()
+    }, 1000)
+
 </script>
