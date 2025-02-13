@@ -59,10 +59,10 @@ func main() {
 
 	// 内存信息路由
 	memGroup := app.Group("/mem")
-	memGroup.Get("/info", handlers.MemInfo)
 	memGroup.Get("/gc", handlers.Gc)
 	// cpu信息路由
 	app.All("/cpuInfo", handlers.CpuInfo)
+	app.All("/memInfo", handlers.MemInfo)
 
 	// 每日文件数量统计路由
 	app.All("/todayFileTotal", handlers.TodayFileTotal)

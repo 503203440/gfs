@@ -8,8 +8,11 @@
 </head>
 
 <body>
-    <div style="display: flex;">
+    <div style="display: flex;flex-direction: column;width: 100%;">
         <div id="sysCpu" style="width: 600px;height: 337px;">
+
+        </div>
+        <div id="sysMem" style="width: 600px;height: 337px;">
 
         </div>
     </div>
@@ -52,12 +55,48 @@
     const cpuChart = echarts.init(document.getElementById('sysCpu'));
     cpuChart.setOption(cpuOption)
 
+    const memOption = {
+        title: {
+            text: 'mem'
+        },
+        xAxis: {
+            type: 'time',
+            axisLabel: {
+                interval: 40,
+                rotate: 45
+            }
+            ,
+            splitLine: {
+                show: false
+            }
+        },
+        yAxis: {
+            type: 'value',
+            // boundaryGap: [0, '100%'],
+            min: 0,
+            max: 100,
+            splitLine: {
+                show: false
+            }
+        },
+        series: [
+            {
+                name: 'memInfo',
+                type: 'line',
+                areaStyle: {},// 线条下填充
+                data: []
+            }
+        ]
+    }
+    const memChart = echarts.init(document.getElementById('sysMem'));
+    memChart.setOption(memOption)
+
+
     /**
      * 获取系统信息并渲染到echarts图表
      */
     function getSysInfo() {
         fetch('/cpuInfo').then(res => res.json()).then(res => {
-            console.log(res)
             let array = []
             res?.forEach(i => {
                 array.push({
@@ -66,6 +105,23 @@
                 })
             })
             cpuChart.setOption({
+                series: [
+                    {
+                        data: array
+                    }
+                ]
+            })
+        })
+
+        fetch('/memInfo').then(res => res.json()).then(res => {
+            let array = []
+            res?.forEach(i => {
+                array.push({
+                    name: 'memLoad',
+                    value: [i.time, i.memInfo?.usedPercent]
+                })
+            })
+            memChart.setOption({
                 series: [
                     {
                         data: array
