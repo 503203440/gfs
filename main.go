@@ -1,12 +1,15 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"gofs/handlers"
 	"gofs/models"
+	"io/fs"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -40,6 +43,9 @@ func main() {
 
 	// 分析性能
 	// app.Use(pprof.New())
+
+	// 释放静态文件到文件目录
+	extractStatic()
 
 	// 映射一个静态资源目录
 	app.Static("/static", "./static", fiber.Static{
@@ -85,4 +91,57 @@ func initLogs(logFilePath, accessLogFilePath string) (*os.File, *os.File) {
 	}
 
 	return gofsLogFile, accessLogfile
+}
+
+// go内嵌当前程序下某个文件夹或文件的命令
+// 注意//go:embed直接不能有空格
+//
+//go:embed static
+var staticFS embed.FS
+
+// 获取可执行文件所在目录
+var exePath, _ = os.Executable()
+var baseDir = filepath.Dir(exePath)
+
+func extractStatic() {
+
+	staticDir := filepath.Join(baseDir, "static")
+	log.Printf("staticDir:%s", staticDir)
+
+	// 如果static目录不存在，则创建并复制文件
+	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+		log.Println("释放静态资源到:", staticDir)
+		err = copyStaticFiles(staticDir)
+		if err != nil {
+			log.Fatal("复制静态资源失败:", err)
+		}
+	} else if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func copyStaticFiles(staticDir string) error {
+	// 创建static目录
+	if err := os.Mkdir(staticDir, 0755); err != nil {
+		return err
+	}
+
+	// 遍历嵌入的文件系统并复制文件
+	return fs.WalkDir(staticFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		log.Println("嵌入文件:", path)
+		targetPath := filepath.Join(baseDir, path)
+		if d.IsDir() {
+			return os.MkdirAll(targetPath, 0755)
+		} else {
+			data, err := staticFS.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			return os.WriteFile(targetPath, data, 0644)
+		}
+	})
 }
