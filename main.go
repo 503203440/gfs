@@ -4,9 +4,9 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"gofs/appinit"
-	"gofs/handlers"
-	"gofs/models"
+	"gfs/appinit"
+	"gfs/handlers"
+	"gfs/models"
 	"log"
 
 	"github.com/gofiber/fiber/v2"

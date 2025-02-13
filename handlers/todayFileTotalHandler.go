@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"gofs/models"
+	"gfs/models"
 	"log"
 	"time"
 

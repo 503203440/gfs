@@ -2,7 +2,7 @@ package appinit
 
 import (
 	"embed"
-	"gofs/models"
+	"gfs/models"
 	"io/fs"
 	"log"
 	"os"
@@ -16,7 +16,7 @@ func AppInit(fs *embed.FS) (*os.File, *os.File) {
 	staticFS = *fs
 
 	// 初始化日志
-	LogFile, accessLogFile := initLogs("./gofs.log", "./access.log")
+	LogFile, accessLogFile := initLogs("./gfs.log", "./access.log")
 
 	// 释放static文件目录
 	extractStatic()
@@ -76,11 +76,11 @@ func copyStaticFiles(staticDir string) error {
 }
 
 func initLogs(logFilePath, accessLogFilePath string) (*os.File, *os.File) {
-	gofsLogFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	gfsLogFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		panic("创建系统日志文件失败: " + err.Error())
 	}
-	log.SetOutput(models.NewMultiWrite(gofsLogFile, os.Stdout))
+	log.SetOutput(models.NewMultiWrite(gfsLogFile, os.Stdout))
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	accessLogfile, err := os.OpenFile(accessLogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
@@ -88,5 +88,5 @@ func initLogs(logFilePath, accessLogFilePath string) (*os.File, *os.File) {
 		panic("创建访问日志文件失败: " + err.Error())
 	}
 
-	return gofsLogFile, accessLogfile
+	return gfsLogFile, accessLogfile
 }

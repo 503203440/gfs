@@ -1,4 +1,4 @@
-module gofs
+module gfs
 
 go 1.23.6
 

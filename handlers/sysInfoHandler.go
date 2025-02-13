@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"gofs/utils"
+	"gfs/utils"
 	"log"
 	"runtime"
 	"time"
