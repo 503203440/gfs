@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -23,7 +22,6 @@ func (ct *CustomTime) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &str); err != nil {
 		return err
 	}
-	log.Println("str:", str)
 	if str == "null" {
 		// 如果是 null，设置为零值
 		ct.Time = time.Time{}

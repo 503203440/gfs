@@ -4,6 +4,7 @@ import (
 	"gfs/models"
 	"log"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,7 +18,8 @@ func GetSign(c *fiber.Ctx) error {
 			"data": string(c.Body()),
 		})
 	} else {
-		log.Println("signVO:", signVo)
+		jsonData, _ := json.Marshal(signVo)
+		log.Println("signVO:", string(jsonData))
 
 		if err != nil {
 			return c.Status(500).SendString("Error marshaling JSON")
