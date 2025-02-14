@@ -20,10 +20,6 @@ func GetSign(c *fiber.Ctx) error {
 	} else {
 		jsonData, _ := json.Marshal(signVo)
 		log.Println("signVO:", string(jsonData))
-
-		if err != nil {
-			return c.Status(500).SendString("Error marshaling JSON")
-		}
 		return c.JSON(signVo)
 	}
 
