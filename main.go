@@ -61,6 +61,7 @@ func main() {
 	// 内存信息路由
 	memGroup := app.Group("/mem")
 	memGroup.Get("/gc", handlers.Gc)
+	memGroup.Get("/info", handlers.GoMemInfo)
 	// cpu信息路由
 	app.All("/cpuInfo", handlers.CpuInfo)
 	app.All("/memInfo", handlers.MemInfo)

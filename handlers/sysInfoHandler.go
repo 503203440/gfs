@@ -67,6 +67,17 @@ func init() {
 
 }
 
+// go的内存使用信息
+func GoMemInfo(c *fiber.Ctx) error {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	allocValue := m.Alloc / 1024 / 1024
+	sysValue := m.Sys / 1024 / 1024
+	log.Printf("runtime alloc = %v Mib, sys= %v Mib \n", allocValue, sysValue)
+	return c.JSON(fiber.Map{"alloc(Mib)": allocValue, "sys(Mib)": sysValue})
+}
+
+// 触发GC
 func Gc(c *fiber.Ctx) error {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -81,10 +92,12 @@ func Gc(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"before": before, "after": after})
 }
 
+// cpu使用率
 func CpuInfo(c *fiber.Ctx) error {
 	return c.JSON(cpuLoadQueue.List())
 }
 
+// 系统内存使用率
 func MemInfo(c *fiber.Ctx) error {
 	return c.JSON(memInfoQueue.List())
 }
