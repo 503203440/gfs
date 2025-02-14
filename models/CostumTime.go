@@ -19,7 +19,10 @@ func (ct CustomTime) MarshalJSON() ([]byte, error) {
 
 func (ct *CustomTime) UnmarshalJSON(data []byte) error {
 	// 去掉 JSON 字符串的引号
-	str := string(data)
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
 	log.Println("str:", str)
 	if str == "null" {
 		// 如果是 null，设置为零值
