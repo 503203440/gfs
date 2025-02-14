@@ -10,6 +10,7 @@ import (
 	"log"
 	"path"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -32,7 +33,11 @@ func main() {
 	flag.Parse()
 
 	// 构建一个fiber实例
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		// json编解码使用go-json更快
+		JSONEncoder: json.Marshal,
+		JSONDecoder: json.Unmarshal,
+	})
 
 	// 配置fiber的http请求日志
 	app.Use(logger.New(logger.Config{
@@ -68,6 +73,9 @@ func main() {
 
 	// 每日文件数量统计路由
 	app.All("/todayFileTotal", handlers.TodayFileTotal)
+
+	// 获取签名
+	app.Post("/sign/getSign", handlers.GetSign)
 
 	// 此处port是一个指针, 访问对应的值需要使用*port
 	address := fmt.Sprintf(":%d", *port)
