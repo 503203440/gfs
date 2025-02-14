@@ -3,12 +3,28 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gfs</title>
     <script src="/static/echarts.min.js"></script>
+    <style>
+        #box {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+        }
+
+        @media screen and (max-width: 1024px) {
+            #box {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div style="display: flex;flex-direction: column;width: 100%;">
+    <div id="box">
         <div id="sysCpu" style="width: 600px;height: 337px;">
 
         </div>
@@ -58,6 +74,19 @@
     const memOption = {
         title: {
             text: 'mem'
+        },
+        // tooltip控制是否显示鼠标悬浮数值显示
+        tooltip: {
+            trigger: 'axis', // 触发类型为坐标轴触发
+            axisPointer: {
+                type: 'cross',
+            },
+            formatter: function (params) {
+                // 自定义提示框内容
+                return params.map(function (param) {
+                    return `内存占用率: ${param.value[1]}%`;
+                }).join('<br>');
+            }
         },
         xAxis: {
             type: 'time',

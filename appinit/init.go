@@ -29,12 +29,12 @@ func AppInit(fs *embed.FS) (*os.File, *os.File) {
 //
 
 // 获取可执行文件所在目录
-var exePath, _ = os.Executable()
-var baseDir = filepath.Dir(exePath)
+var ExePath, _ = os.Executable()
+var BaseDir = filepath.Dir(ExePath)
 
 func extractStatic() {
 
-	staticDir := filepath.Join(baseDir, "static")
+	staticDir := filepath.Join(BaseDir, "static")
 	log.Printf("staticDir:%s", staticDir)
 
 	// 如果static目录不存在，则创建并复制文件
@@ -62,7 +62,7 @@ func copyStaticFiles(staticDir string) error {
 			return err
 		}
 		log.Println("嵌入文件:", path)
-		targetPath := filepath.Join(baseDir, path)
+		targetPath := filepath.Join(BaseDir, path)
 		if d.IsDir() {
 			return os.MkdirAll(targetPath, 0755)
 		} else {

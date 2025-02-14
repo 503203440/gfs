@@ -8,6 +8,7 @@ import (
 	"gfs/handlers"
 	"gfs/models"
 	"log"
+	"path"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -47,13 +48,13 @@ func main() {
 	// app.Use(pprof.New())
 
 	// 映射一个静态资源目录
-	app.Static("/static", "./static", fiber.Static{
+	app.Static("/static", path.Join(appinit.BaseDir, "static"), fiber.Static{
 		Browse: true,
 	})
 
 	// 默认的路由
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendFile("./static/index.html")
+		return c.SendFile(path.Join(appinit.BaseDir, "static/index.html"))
 		// return c.SendString("Hello, World!")
 	})
 
