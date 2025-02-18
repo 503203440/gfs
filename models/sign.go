@@ -1,7 +1,7 @@
 package models
 
 type SignVo struct {
-	ClientId     int64      `json:"clientId"`
+	ClientId     *int64     `json:"clientId"`
 	Timestamp    string     `json:"timestamp"`
 	RandomString string     `json:"randomString"`
 	ExpiresTime  CustomTime `json:"expiresTime"`

@@ -36,3 +36,8 @@ func (ct *CustomTime) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
+
+// 重写toString方法
+func (ct CustomTime) String() string {
+	return ct.Time.Format("2006-01-02 15:04:05")
+}
