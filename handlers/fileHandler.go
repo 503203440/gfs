@@ -45,8 +45,9 @@ func GetSign(c *fiber.Ctx) error {
 		// 由于原来的版本就是没有任何内容参与计算,所以这里直接给一个空的map
 		signData := make(map[string]any)
 		// 计算签名
-		checkResult := utils.GetSign(signData, clientInfoEntity.SecertKey, utils.HMACSHA256)
-		if checkResult != signVo.Sign {
+		calculateSignStr := utils.GetSign(signData, clientInfoEntity.SecertKey, utils.HMACSHA256)
+		log.Println("计算签名结果", calculateSignStr)
+		if calculateSignStr != signVo.Sign {
 			return c.JSON(models.ApiError("签名验证不通过"))
 		}
 

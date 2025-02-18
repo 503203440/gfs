@@ -64,8 +64,6 @@ func GetSign(data map[string]any, key string, signType SignType) string {
 		appendStr = appendStr[:len(appendStr)-1]
 	}
 
-	fmt.Println("最终拼接的字符串", appendStr)
-
 	if signType == HMACMD5 {
 		return generateMD5(appendStr, key)
 	} else {
