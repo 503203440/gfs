@@ -4,6 +4,9 @@ import (
 	"gfs/models"
 	"gfs/utils"
 	"log"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -38,6 +41,7 @@ func GetSign(c *fiber.Ctx) error {
 			return c.JSON(models.ApiErrorDetail("查询数据错误", "999", result.Error.Error()))
 			// }
 		}
+		clientId := clientInfoEntity.Id
 		log.Println("clientInfo:", clientInfoEntity.Id, clientInfoEntity.SecertKey)
 
 		// 将body参数转化为map
@@ -51,7 +55,16 @@ func GetSign(c *fiber.Ctx) error {
 			return c.JSON(models.ApiError("签名验证不通过"))
 		}
 
-		return c.JSON(signVo)
+		tokenEntity := models.TokenEntity{
+			Token:       strings.ToUpper(utils.GenerateRandomString(18)),
+			ClientID:    clientId,
+			Timestamp:   strconv.FormatInt(time.Now().Unix(), 10),
+			ExpiresTime: signVo.ExpiresTime,
+			Used:        false,
+		}
+		utils.DbConnect.Save(&tokenEntity)
+
+		return c.JSON(tokenEntity)
 	}
 
 }

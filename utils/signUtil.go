@@ -59,10 +59,8 @@ func GetSign(data map[string]any, key string, signType SignType) string {
 		}
 		appendStr += fmt.Sprintf("%v=%v&", k, data[k])
 	}
-	// 移除最后一个&
-	if len(appendStr) > 0 {
-		appendStr = appendStr[:len(appendStr)-1]
-	}
+	// 最后追加上key
+	appendStr += fmt.Sprintf("key=%s", key)
 
 	if signType == HMACMD5 {
 		return generateMD5(appendStr, key)
