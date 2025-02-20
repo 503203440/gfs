@@ -3,9 +3,12 @@ package utils
 import (
 	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"os"
 	"sort"
 	"strings"
 )
@@ -30,6 +33,24 @@ func generateMD5(message, key string) string {
 	h.Write([]byte(message))
 	sum := h.Sum(nil)
 	return strings.ToUpper(hex.EncodeToString(sum))
+}
+
+// 计算文件SHA1
+func generateFileSHA1(filePath string) (*string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	hasher := sha1.New()
+	_, err = io.Copy(hasher, f)
+	if err != nil {
+		return nil, err
+	}
+	shaByte := hasher.Sum(nil)
+	hexStr := hex.EncodeToString(shaByte)
+	return &hexStr, nil
 }
 
 // 定义一个SignType的类型,可选的值为const里面的内容

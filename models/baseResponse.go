@@ -8,7 +8,7 @@ type BaseResponse struct {
 
 func ApiSuccess(data any) BaseResponse {
 	return BaseResponse{
-		Code: "999",
+		Code: "0",
 		Data: data,
 	}
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"gfs/models"
 	"log"
 	"time"
 
@@ -29,4 +30,8 @@ func init() {
 	sqlDB.SetMaxOpenConns(30)           // 设置最大连接数
 	sqlDB.SetConnMaxLifetime(time.Hour) // 设置连接的最大生命周期
 
+	// 自动绑定模型
+	DbConnect.AutoMigrate(&models.FileInfo{})
+	DbConnect.AutoMigrate(&models.ClientInfoEntity{})
+	DbConnect.AutoMigrate(&models.TokenEntity{})
 }

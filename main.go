@@ -79,6 +79,8 @@ func main() {
 
 	// 获取签名
 	app.Post("/sign/getSign", handlers.GetSign)
+	// 文件上传
+	app.Post("/upload/", handlers.UploadNoName)
 
 	// 此处port是一个指针, 访问对应的值需要使用*port
 	address := fmt.Sprintf(":%d", *port)

@@ -1,15 +1,20 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
+	"gfs/appinit"
 	"gfs/models"
 	"gfs/utils"
 	"log"
+	"path"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 func GetSign(c *fiber.Ctx) error {
@@ -31,7 +36,6 @@ func GetSign(c *fiber.Ctx) error {
 		var clientInfoEntity models.ClientInfoEntity
 
 		// 查询数据库
-		utils.DbConnect.AutoMigrate(&models.ClientInfoEntity{})
 		result := utils.DbConnect.Model(&models.ClientInfoEntity{}).Where("id = ?", &signVo.ClientId).Take(&clientInfoEntity)
 
 		if result.Error != nil {
@@ -67,4 +71,64 @@ func GetSign(c *fiber.Ctx) error {
 		return c.JSON(tokenEntity)
 	}
 
+}
+
+// 返回结果中不包含名称
+func UploadNoName(c *fiber.Ctx) error {
+	token := c.FormValue("token")
+	if token == "" {
+		return c.JSON(models.ApiError("token不能为空"))
+	}
+	var tokenEntity models.TokenEntity
+	queryResult := utils.DbConnect.Model(&models.TokenEntity{}).Where("token = ?", token).Take(&tokenEntity)
+	if queryResult.Error != nil {
+		if errors.Is(queryResult.Error, gorm.ErrRecordNotFound) {
+			return c.JSON(models.ApiError("token无效 token:" + token))
+		} else {
+			log.Printf("查询发生错误!%v", queryResult.Error)
+			return c.JSON(models.ApiError("服务器错误:" + queryResult.Error.Error()))
+		}
+	} else {
+		if tokenEntity.Used {
+			return c.JSON(models.ApiError("token已使用"))
+		}
+		urls := make([]string, 0)
+		if multipartForm, err := c.MultipartForm(); err != nil {
+			log.Println("表单读取错误:", err)
+			return c.JSON(models.ApiError("读取文件错误" + err.Error()))
+		} else {
+			files := multipartForm.File["file"]
+
+			for _, f := range files {
+				// 将文件保存到本地目录
+				log.Println("文件名:", f.Filename)
+				if err := c.SaveFile(f, path.Join(appinit.BaseDir, "static", f.Filename)); err != nil {
+					return c.JSON(models.ApiError("保存文件错误" + err.Error()))
+				} else {
+					url := fmt.Sprintf("%s/static/%s", string(c.Request().Host()), f.Filename)
+					urls = append(urls, url)
+					// TODO 文件保存并上传oss操作,以及更新token使用状态
+
+				}
+			}
+		}
+
+		return c.JSON(models.ApiSuccess(urls))
+	}
+}
+
+// 根据文件sha1和size, 查询数据库中是否存在这么一个文件
+func findFileInfo(size int, sha string) *models.FileInfo {
+	var fileInfo models.FileInfo
+	queryResult := utils.DbConnect.Model(&models.FileInfo{}).Where("sha_key = ? and size = ?", sha, size).Take(&fileInfo)
+	if queryResult.Error != nil {
+		if errors.Is(queryResult.Error, gorm.ErrRecordNotFound) {
+			return nil
+		} else {
+			log.Println("查询文件信息错误!", queryResult.Error)
+			return nil
+		}
+	} else {
+		return &fileInfo
+	}
 }

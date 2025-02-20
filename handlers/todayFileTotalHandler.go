@@ -11,7 +11,7 @@ import (
 func TodayFileTotal(c *fiber.Ctx) error {
 	var total int64
 
-	utils.DbConnect.AutoMigrate(&models.FileInfo{})
+	
 	err := utils.DbConnect.Model(&models.FileInfo{}).
 		Where("create_time >= ? AND create_time < ?", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 1).Format("2006-01-02")).
 		Or("update_time >= ? AND update_time < ?", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 1).Format("2006-01-02")).
