@@ -29,6 +29,9 @@ func main() {
 
 	// 获取port参数,如果没有则默认使用8080
 	port := flag.Int("port", 8080, "使用-port=8080设置服务启动参数")
+	useSSL := flag.Bool("useSSL", false, "是否使用SSL")
+	certPath := flag.String("certPath", "", "公钥证书文件路径")
+	keyPath := flag.String("keyPath", "", "私钥证书文件路径")
 	// 执行解析参数
 	flag.Parse()
 
@@ -80,8 +83,16 @@ func main() {
 	// 此处port是一个指针, 访问对应的值需要使用*port
 	address := fmt.Sprintf(":%d", *port)
 	log.Printf("listen address:%s", address)
-	if err := app.Listen(address); err != nil {
-		panic(err)
+
+	if *useSSL {
+		log.Printf("使用SSL配置:certPath:%s, keyPath:%s", *certPath, *keyPath)
+		if err := app.ListenTLS(address, *certPath, *keyPath); err != nil {
+			panic(err)
+		}
+	} else {
+		if err := app.Listen(address); err != nil {
+			panic(err)
+		}
 	}
 
 }
