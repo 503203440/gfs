@@ -1,7 +1,7 @@
 package models
 
 type ClientInfoEntity struct {
-	Id        int `gorm:"primarykey"`
+	Id        *int `gorm:"primarykey"`
 	SecertKey string
 }
 

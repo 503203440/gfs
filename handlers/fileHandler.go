@@ -42,7 +42,7 @@ func GetSign(c *fiber.Ctx) error {
 			// }
 		}
 		clientId := clientInfoEntity.Id
-		log.Println("clientInfo:", clientInfoEntity.Id, clientInfoEntity.SecertKey)
+		log.Println("clientInfo:", *clientInfoEntity.Id, clientInfoEntity.SecertKey)
 
 		// 将body参数转化为map
 		// signData := utils.StructToMap(signVo)
@@ -57,7 +57,7 @@ func GetSign(c *fiber.Ctx) error {
 
 		tokenEntity := models.TokenEntity{
 			Token:       strings.ToUpper(utils.GenerateRandomString(18)),
-			ClientID:    clientId,
+			ClientID:    *clientId,
 			Timestamp:   strconv.FormatInt(time.Now().Unix(), 10),
 			ExpiresTime: signVo.ExpiresTime,
 			Used:        false,
