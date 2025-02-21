@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -38,7 +39,14 @@ func (ct *CustomTime) UnmarshalJSON(data []byte) error {
 		log.Println("无法解析json数据，将尝试timestamp模式", err)
 		var timestamp int64
 		if err = json.Unmarshal(data, &timestamp); err == nil {
-			ct.Time = time.Unix(timestamp, 0)
+			timestampLength := len(strconv.FormatInt(timestamp, 10))
+			if timestampLength >= 13 { // 如果你看到一个时间戳是10位数，那么很可能是秒级时间戳；如果是13位数，则很可能是毫秒级时间戳。
+				// 毫秒
+				ct.Time = time.UnixMilli(timestamp)
+			} else {
+				// 秒
+				ct.Time = time.Unix(timestamp, 0)
+			}
 		} else {
 			log.Println("尝试timestamp仍无法解析json数据", err)
 			return err
@@ -65,7 +73,20 @@ func (ct *CustomTime) Scan(value interface{}) error {
 	// 如果断言成功，value 会被转换为 time.Time 类型；如果失败，则会引发错误
 	t, ok := value.(time.Time)
 	if !ok {
-		return fmt.Errorf("failed to convert %T to CustomTime", value)
+		// return fmt.Errorf("failed to convert %T to CustomTime", value)
+		var timestamp int64
+		timestamp, ok = value.(int64)
+		if !ok {
+			return fmt.Errorf("failed to convert %T to CustomTime", value)
+		}
+		timestampLength := len(strconv.FormatInt(timestamp, 10))
+		if timestampLength >= 13 { // 如果你看到一个时间戳是10位数，那么很可能是秒级时间戳；如果是13位数，则很可能是毫秒级时间戳。
+			// 毫秒
+			ct.Time = time.UnixMilli(timestamp)
+		} else {
+			// 秒
+			ct.Time = time.Unix(timestamp, 0)
+		}
 	}
 	ct.Time = t
 	return nil

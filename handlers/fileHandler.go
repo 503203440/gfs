@@ -7,6 +7,7 @@ import (
 	"gfs/models"
 	"gfs/utils"
 	"log"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -16,6 +17,23 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
+
+var uploadPath string
+
+func init() {
+	// 创建文件上传目录,如果不存在
+	uploadPath = path.Join(appinit.BaseDir, "file-uploads")
+
+	if _, err := os.Stat(uploadPath); os.IsNotExist(err) {
+		err := os.MkdirAll(uploadPath, 0755)
+		if err != nil {
+			log.Println("创建file-uploads文件夹失败!", err)
+		} else {
+			log.Println("创建file-uploads成功!")
+		}
+	}
+
+}
 
 func GetSign(c *fiber.Ctx) error {
 	var signVo models.SignVo
@@ -102,13 +120,27 @@ func UploadNoName(c *fiber.Ctx) error {
 			for _, f := range files {
 				// 将文件保存到本地目录
 				log.Println("文件名:", f.Filename)
-				if err := c.SaveFile(f, path.Join(appinit.BaseDir, "static", f.Filename)); err != nil {
+				extName := strings.ToLower(path.Ext(f.Filename))
+				randFileName := utils.GenerateRandomString(20) + extName
+				saveFilePath := path.Join(uploadPath, randFileName)
+
+				if err := c.SaveFile(f, saveFilePath); err != nil {
 					return c.JSON(models.ApiError("保存文件错误" + err.Error()))
 				} else {
-					url := fmt.Sprintf("%s/static/%s", string(c.Request().Host()), f.Filename)
+					url := fmt.Sprintf("%s/file-uploads/%s", string(c.Request().Host()), randFileName)
 					urls = append(urls, url)
-					// TODO 文件保存并上传oss操作,以及更新token使用状态
 
+					if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == "bmp" {
+						composeFileName := "compress_" + randFileName
+						composeFilePath := path.Join(uploadPath, composeFileName)
+						// 压缩文件
+						if err := utils.ComposeImg(saveFilePath, composeFilePath, 1000, false); err != nil {
+							log.Println("文件压缩失败", err.Error())
+						} else {
+							// 压缩文件成功
+							log.Println("压缩文件成功")
+						}
+					}
 				}
 			}
 		}

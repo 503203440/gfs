@@ -40,6 +40,7 @@ func main() {
 		// json编解码使用go-json更快
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
+		BodyLimit:   2 * 1024 * 1024 * 1024, //最大可以上传2G
 	})
 
 	// 配置fiber的http请求日志
@@ -57,6 +58,10 @@ func main() {
 
 	// 映射一个静态资源目录
 	app.Static("/static", path.Join(appinit.BaseDir, "static"), fiber.Static{
+		Browse: true,
+	})
+	// 上传的文件
+	app.Static("/file-uploads", path.Join(appinit.BaseDir, "file-uploads"), fiber.Static{
 		Browse: true,
 	})
 
