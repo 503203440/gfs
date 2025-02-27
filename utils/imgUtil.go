@@ -6,9 +6,11 @@ import (
 	"image"
 	_ "image/gif"
 	"image/jpeg"
-	_ "image/png"
+	"image/png"
+	"io"
 	"log"
 	"os"
+	"strings"
 
 	"golang.org/x/image/draw"
 )
@@ -26,6 +28,7 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 	if err != nil {
 		return errors.New("解码文件失败:" + err.Error())
 	}
+	formatName = strings.ToLower(formatName)
 	fmt.Println("文件格式:", formatName)
 	// 创建输出文件
 	outFile, err := os.Create(outputPath)
@@ -51,7 +54,11 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 		newImg := image.NewRGBA(image.Rect(0, 0, newWidth, int(newHeight)))
 		draw.CatmullRom.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
 		// 编码并保存压缩后的图片
-		jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
+		if formatName == "jpg" || formatName == "jpeg" {
+			jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
+		} else {
+			png.Encode(outFile, newImg)
+		}
 
 	} else {
 		if forceResize {
@@ -61,9 +68,18 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 			jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
 		} else {
 			// 保持原大小
-			newImg := image.NewRGBA(image.Rect(0, 0, width, height))
-			draw.CatmullRom.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
-			jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
+			// newImg := image.NewRGBA(image.Rect(0, 0, width, height))
+			// draw.CatmullRom.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
+			// jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
+
+			// 直接复制一份,不用浪费时间去编码
+			file.Seek(0, io.SeekStart) // 将文件指针重置
+			written, err := io.Copy(outFile, file)
+			if err != nil {
+				log.Println("复制文件错误:", err)
+			} else {
+				log.Println("直接复制文件完成", written)
+			}
 		}
 	}
 
