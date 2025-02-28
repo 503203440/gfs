@@ -85,3 +85,17 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 
 	return nil
 }
+
+// 返回图片宽度, 如果读取失败则返回width为0和error信息
+func ImageWidth(imgPath string) (int, error) {
+	file, err := os.Open(imgPath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return 0, err
+	}
+	return img.Bounds().Max.X, nil
+}

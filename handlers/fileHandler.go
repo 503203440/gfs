@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"gfs/appinit"
 	"gfs/models"
 	"gfs/utils"
@@ -127,20 +126,37 @@ func UploadNoName(c *fiber.Ctx) error {
 				if err := c.SaveFile(f, saveFilePath); err != nil {
 					return c.JSON(models.ApiError("保存文件错误" + err.Error()))
 				} else {
-					url := fmt.Sprintf("%s/file-uploads/%s", string(c.Request().Host()), randFileName)
-					urls = append(urls, url)
+					// 上传到oss
+					ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
+					ossUrl, err := utils.UploadFile(ossKey, saveFilePath)
+					if err != nil {
+						log.Println("oss上传失败", err)
+						return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
+					}
 
+					// 是图片且可以压缩
 					if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == "bmp" {
-						composeFileName := "compress_" + randFileName
-						composeFilePath := path.Join(uploadPath, composeFileName)
-						// 压缩文件
-						if err := utils.ComposeImg(saveFilePath, composeFilePath, 1000, false); err != nil {
-							log.Println("文件压缩失败", err.Error())
-						} else {
-							// 压缩文件成功
-							log.Println("压缩文件成功")
+						width, err := utils.ImageWidth(saveFilePath)
+						if width > 1000 && err == nil {
+							composeFileName := "compress_" + randFileName
+							composeFilePath := path.Join(uploadPath, composeFileName)
+							// 压缩文件
+							if err := utils.ComposeImg(saveFilePath, composeFilePath, 1000, false); err != nil {
+								log.Println("文件压缩失败", err.Error())
+							} else {
+								// 压缩文件成功
+								ossKey := path.Join(utils.OssFolderCompress, time.Now().Format("2006-01"), randFileName)
+								// 上传一份压缩版,并返回压缩版的值
+								composeUrl, err := utils.UploadFile(ossKey, composeFilePath)
+								if err == nil {
+									ossUrl = composeUrl
+								}
+							}
 						}
 					}
+
+					urls = append(urls, ossUrl)
+
 				}
 			}
 		}
