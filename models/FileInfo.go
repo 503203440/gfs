@@ -8,10 +8,10 @@ import (
 
 type FileInfo struct {
 	gorm.Model
-	ID         uint
+	ID         uint `gorm:"primarykey"`
 	Reference  int
-	ShaKey     string
-	Size       int
+	ShaKey     string `gorm:"index"`
+	Size       int64
 	CreateTime time.Time
 	UpdateTime time.Time
 	URL        string

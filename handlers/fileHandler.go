@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"gfs/appinit"
 	"gfs/models"
 	"gfs/utils"
@@ -56,11 +57,11 @@ func GetSign(c *fiber.Ctx) error {
 		result := utils.DbConnect.Model(&models.ClientInfoEntity{}).Where("id = ?", &signVo.ClientId).Take(&clientInfoEntity)
 
 		if result.Error != nil {
-			// if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// 	return c.JSON(models.ApiError("未找到客户端信息"))
-			// } else {
-			return c.JSON(models.ApiErrorDetail("查询数据错误", "999", result.Error.Error()))
-			// }
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return c.JSON(models.ApiError("未找到客户端信息"))
+			} else {
+				return c.JSON(models.ApiErrorDetail("查询数据错误", "999", result.Error.Error()))
+			}
 		}
 		clientId := clientInfoEntity.Id
 		log.Println("clientInfo:", *clientInfoEntity.Id, clientInfoEntity.SecertKey)
@@ -115,49 +116,92 @@ func UploadNoName(c *fiber.Ctx) error {
 			return c.JSON(models.ApiError("读取文件错误" + err.Error()))
 		} else {
 			files := multipartForm.File["file"]
-
 			for _, f := range files {
 				// 将文件保存到本地目录
 				log.Println("文件名:", f.Filename)
 				extName := strings.ToLower(path.Ext(f.Filename))
 				randFileName := utils.GenerateRandomString(20) + extName
 				saveFilePath := path.Join(uploadPath, randFileName)
-
 				if err := c.SaveFile(f, saveFilePath); err != nil {
 					return c.JSON(models.ApiError("保存文件错误" + err.Error()))
 				} else {
-					// 上传到oss
-					ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
-					ossUrl, err := utils.UploadFile(ossKey, saveFilePath)
-					if err != nil {
-						log.Println("oss上传失败", err)
-						return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
+					// 计算文件sha, 查询此文件是否已经上传过
+					sha1, genShaErr := utils.GenerateFileSHA1(saveFilePath)
+					if genShaErr == nil {
+						// 查询是否存符合条件的数据
+						var fileInfo models.FileInfo
+						queryExistsResult := utils.DbConnect.Model(&models.FileInfo{}).Where("sha_key = ?", sha1).Where("size = ?", f.Size).Take(&fileInfo)
+						if queryExistsResult.Error == nil {
+							ossUrl := fileInfo.URL
+							urls = append(urls, ossUrl)
+							// 更新引用次数
+							referenceUpdateResult := utils.DbConnect.Model(&models.FileInfo{}).Where("id = ?", fileInfo.ID).Updates(map[string]any{
+								"reference":   fileInfo.Reference + 1,
+								"update_time": time.Now(),
+							})
+							if referenceUpdateResult.Error != nil {
+								log.Println("更新引用次数失败!", referenceUpdateResult.Error)
+							}
+							continue // 此文件已经存在, 直接返回
+						}
 					}
+					// 若oss配置存在
+					if utils.OssClient != nil {
+						// 上传到oss
+						ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
+						ossUrl, err := utils.UploadFile(ossKey, saveFilePath)
+						if err != nil {
+							log.Println("oss上传失败", err)
+							return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
+						}
 
-					// 是图片且可以压缩
-					if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == "bmp" {
-						width, err := utils.ImageWidth(saveFilePath)
-						if width > 1000 && err == nil {
-							composeFileName := "compress_" + randFileName
-							composeFilePath := path.Join(uploadPath, composeFileName)
-							// 压缩文件
-							if err := utils.ComposeImg(saveFilePath, composeFilePath, 1000, false); err != nil {
-								log.Println("文件压缩失败", err.Error())
-							} else {
-								// 压缩文件成功
-								ossKey := path.Join(utils.OssFolderCompress, time.Now().Format("2006-01"), randFileName)
-								// 上传一份压缩版,并返回压缩版的值
-								composeUrl, err := utils.UploadFile(ossKey, composeFilePath)
-								if err == nil {
-									ossUrl = composeUrl
+						// 是图片且可以压缩
+						if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == "bmp" {
+							width, err := utils.ImageWidth(saveFilePath)
+							if width > 1000 && err == nil {
+								composeFileName := "compress_" + randFileName
+								composeFilePath := path.Join(uploadPath, composeFileName)
+								// 压缩文件
+								if err := utils.ComposeImg(saveFilePath, composeFilePath, 1000, false); err != nil {
+									log.Println("文件压缩失败", err.Error())
+								} else {
+									// 压缩文件成功
+									ossKey := path.Join(utils.OssFolderCompress, time.Now().Format("2006-01"), randFileName)
+									// 上传一份压缩版,并返回压缩版的值
+									composeUrl, err := utils.UploadFile(ossKey, composeFilePath)
+									if err == nil {
+										ossUrl = composeUrl
+									}
 								}
 							}
 						}
+						urls = append(urls, ossUrl)
+
+						// 记录文件sha1信息
+						if genShaErr == nil {
+							fileInfo := models.FileInfo{
+								ShaKey:     *sha1,
+								Size:       f.Size,
+								URL:        ossUrl,
+								CreateTime: time.Now(),
+								Reference:  1,
+							}
+							saveResult := utils.DbConnect.Model(&models.FileInfo{}).Save(&fileInfo)
+							if saveResult.Error != nil {
+								log.Println("保存文件引用信息失败!", saveResult)
+							}
+						}
+					} else {
+						// 未配置oss,直接返回当前服务对应的路径
+						url := fmt.Sprintf("%s/static/%s", string(c.Request().Host()), f.Filename)
+						urls = append(urls, url)
 					}
-
-					urls = append(urls, ossUrl)
-
 				}
+			}
+			// 更新token使用情况
+			updateResult := utils.DbConnect.Model(&models.TokenEntity{}).Where("id = ?", tokenEntity.ID).Update("used", true)
+			if updateResult.Error != nil {
+				log.Println("更新token使用情况错误!", updateResult.Error)
 			}
 		}
 

@@ -36,7 +36,7 @@ func generateMD5(message, key string) string {
 }
 
 // 计算文件SHA1
-func generateFileSHA1(filePath string) (*string, error) {
+func GenerateFileSHA1(filePath string) (*string, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err

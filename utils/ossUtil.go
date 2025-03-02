@@ -16,9 +16,9 @@ import (
 )
 
 // 公用ossClient对象
-var Client oss.Client
-var bucketName string = "test50"             // 默认bucketName
-var OssFolder string = "GPAI5"               // 默认文件夹
+var OssClient *oss.Client
+var bucketName string = "test50"                // 默认bucketName
+var OssFolder string = "GPAI5"                  // 默认文件夹
 var OssFolderCompress string = "GPAI5_Compress" // 默认压缩文件夹
 
 func init() {
@@ -47,7 +47,7 @@ func init() {
 	// 初始化oss配置
 	provider := credentials.NewStaticCredentialsProvider(accessKeyId, accessKeySecret)
 	cfg := oss.LoadDefaultConfig().WithCredentialsProvider(provider).WithRegion(region)
-	Client = *oss.NewClient(cfg)
+	OssClient = oss.NewClient(cfg)
 
 }
 
@@ -70,7 +70,7 @@ func UploadFile(objectName, localFilePath string) (string, error) {
 		return "", err
 	}
 	log.Println(bucketName, objectName)
-	_, err = Client.PutObject(context.TODO(), &oss.PutObjectRequest{
+	_, err = OssClient.PutObject(context.TODO(), &oss.PutObjectRequest{
 		Bucket: oss.Ptr(bucketName),
 		Key:    oss.Ptr(objectName),
 		Body:   bytes.NewReader(byteArray),
@@ -80,7 +80,7 @@ func UploadFile(objectName, localFilePath string) (string, error) {
 		return "", err
 	}
 
-	urlInfo, err := Client.Presign(
+	urlInfo, err := OssClient.Presign(
 		context.TODO(),
 		&oss.GetObjectRequest{
 			Bucket: oss.Ptr(bucketName),
