@@ -87,6 +87,7 @@ func main() {
 	// 文件上传
 	app.Post("/upload", handlers.UploadNoName)
 	app.Post("/uploadImgs", handlers.UploadReturnName)
+	app.Post("/uploadNotCompress", handlers.UploadNotCompress)
 
 	// 此处port是一个指针, 访问对应的值需要使用*port
 	address := fmt.Sprintf(":%d", *port)
