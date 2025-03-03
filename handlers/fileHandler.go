@@ -86,7 +86,7 @@ func GetSign(c *fiber.Ctx) error {
 		}
 		utils.DbConnect.Save(&tokenEntity)
 
-		return c.JSON(tokenEntity)
+		return c.JSON(models.ApiSuccess(tokenEntity))
 	}
 
 }

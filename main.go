@@ -12,6 +12,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
@@ -48,6 +49,11 @@ func main() {
 		Output:     models.NewMultiWrite(accessLogFile), // 打印到文件
 		TimeFormat: "2006-01-02 15:04:05",               // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
 		Format:     "${time} | ${status} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
+	}))
+
+	// 允许跨域
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
 	}))
 
 	// 避免意外导致程序退出
