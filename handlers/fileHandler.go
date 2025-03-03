@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +33,33 @@ func init() {
 			log.Println("创建file-uploads成功!")
 		}
 	}
+
+	// 启动一个goroutine
+	go func() {
+		for {
+			// 查看当前目录中文件数量, 如果已经达到10G,则删除最早的文件
+			err := filepath.Walk(uploadPath, func(path string, info os.FileInfo, err error) error {
+				if err == nil {
+					if !info.IsDir() {
+						modTime := info.ModTime()
+						timeDiff := time.Since(modTime)
+						if timeDiff.Hours() > 24*7 {
+							fileName := info.Name()
+							log.Printf("删除超过7天的文件:filename:%s,modTime:%s", fileName, modTime.Format("2006-01-02 15:04:05"))
+							os.Remove(path)
+						}
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				log.Println("监听文件夹失败!", err)
+				break
+			}
+			// 每小时执行一次
+			time.Sleep(time.Hour)
+		}
+	}()
 
 }
 
