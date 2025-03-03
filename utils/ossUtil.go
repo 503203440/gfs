@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -21,7 +22,13 @@ var bucketName string = "test50"                // 默认bucketName
 var OssFolder string = "GPAI5"                  // 默认文件夹
 var OssFolderCompress string = "GPAI5_Compress" // 默认压缩文件夹
 
+// 替换为我司cdn域名
+var reg *regexp.Regexp
+
 func init() {
+
+	reg, _ = regexp.Compile(`\b[a-z0-9A-Z-\.]+\.aliyuncs\.com`)
+
 	// 从配置文件获取oss配置信息, 读取当前目录下的oss.properties文件
 	ossPropertiesPath := path.Join(appinit.BaseDir, "oss.properties")
 
@@ -38,23 +45,17 @@ func init() {
 		log.Println("读取oss配置文件错误!", err)
 		return
 	}
-	log.Println("ossConfigMap", ossConfigMap)
 
 	accessKeyId := ossConfigMap["oss.accessKeyId"]
 	accessKeySecret := ossConfigMap["oss.accessKeySecret"]
 	region := ossConfigMap["oss.region"]
+	endpoint := ossConfigMap["oss.endpoint"]
 
 	// 初始化oss配置
 	provider := credentials.NewStaticCredentialsProvider(accessKeyId, accessKeySecret)
-	cfg := oss.LoadDefaultConfig().WithCredentialsProvider(provider).WithRegion(region)
+	cfg := oss.LoadDefaultConfig().WithCredentialsProvider(provider).WithRegion(region).WithEndpoint(endpoint)
 	OssClient = oss.NewClient(cfg)
 
-}
-
-// 创建OSS文件夹,如果不存在,存在也不会报错
-func CreateFolderIfNotExists(path string) error {
-
-	return nil
 }
 
 func UploadFile(objectName, localFilePath string) (string, error) {
@@ -93,6 +94,9 @@ func UploadFile(objectName, localFilePath string) (string, error) {
 	}
 	// 截断字符串, 去除后面的有效期等参数
 	fileUrl := urlInfo.URL[:strings.Index(urlInfo.URL, "?")]
+
+	fileUrl = reg.ReplaceAllString(fileUrl, "cdnimg.gpai.net")
+
 	log.Println("upload result:", fileUrl)
 
 	return fileUrl, nil

@@ -163,7 +163,7 @@ func UploadNoName(c *fiber.Ctx) error {
 						return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
 					}
 					// 是图片且可以压缩
-					composeUrl, composeErr := composeAndUpload(saveFilePath)
+					composeUrl, composeErr := composeAndUpload(saveFilePath, randFileName)
 					if composeErr == nil {
 						ossUrl = *composeUrl
 					}
@@ -234,7 +234,7 @@ func UploadReturnName(c *fiber.Ctx) error {
 						return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
 					}
 					// 是图片且可以压缩
-					composeUrl, composeErr := composeAndUpload(saveFilePath)
+					composeUrl, composeErr := composeAndUpload(saveFilePath, randFileName)
 					if composeErr == nil {
 						ossUrl = *composeUrl
 					}
@@ -300,7 +300,7 @@ func UploadNotCompress(c *fiber.Ctx) error {
 					return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
 				}
 				// 尝试压缩并得到压缩版URL,这里虽然用不着
-				composeUrl, err := composeAndUpload(saveFilePath)
+				composeUrl, err := composeAndUpload(saveFilePath, randFileName)
 				if err == nil {
 					// 记录文件sha1信息
 					fileInfo := models.FileInfo{ShaKey: *sha1, Size: file.Size, URL: *composeUrl, CreateTime: time.Now(), Reference: 1}
@@ -332,10 +332,9 @@ func UploadNotCompress(c *fiber.Ctx) error {
 }
 
 // 压缩并上传文件, 返回压缩后的url
-func composeAndUpload(sourceImgPath string) (*string, error) {
+func composeAndUpload(sourceImgPath, randFileName string) (*string, error) {
 	extName := path.Ext(sourceImgPath)
 	if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == "bmp" {
-		randFileName := utils.GenerateRandomString(20) + extName
 		width, err := utils.ImageWidth(sourceImgPath)
 		if width <= 1000 || err != nil {
 			return nil, errors.New("文件宽度不足或无法读取文件宽度信息")
