@@ -1,6 +1,7 @@
 .idea/
 *.log
 gfs.exe
+gfs
 flx.db
 file-uploads/
 oss.properties
