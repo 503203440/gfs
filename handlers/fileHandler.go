@@ -129,9 +129,8 @@ func UploadNoName(c *fiber.Ctx) error {
 					sha1, genShaErr := utils.GenerateFileSHA1(saveFilePath)
 					if genShaErr == nil {
 						// 查询是否存符合条件的数据
-						var fileInfo models.FileInfo
-						queryExistsResult := utils.DbConnect.Model(&models.FileInfo{}).Where("sha_key = ?", sha1).Where("size = ?", f.Size).Take(&fileInfo)
-						if queryExistsResult.Error == nil {
+						fileInfo := findFileInfo(f.Size, *sha1)
+						if fileInfo != nil {
 							ossUrl := fileInfo.URL
 							urls = append(urls, ossUrl)
 							// 更新引用次数
@@ -210,7 +209,7 @@ func UploadNoName(c *fiber.Ctx) error {
 }
 
 // 根据文件sha1和size, 查询数据库中是否存在这么一个文件
-func findFileInfo(size int, sha string) *models.FileInfo {
+func findFileInfo(size int64, sha string) *models.FileInfo {
 	var fileInfo models.FileInfo
 	queryResult := utils.DbConnect.Model(&models.FileInfo{}).Where("sha_key = ? and size = ?", sha, size).Take(&fileInfo)
 	if queryResult.Error != nil {

@@ -1,9 +1,9 @@
 package models
 
 type BaseResponse struct {
-	Code string `json:code`
-	Msg  string `json:msg`
-	Data any    `json:data`
+	Code string `json:"code"`
+	Msg  string `json:"msg"`
+	Data any    `json:"data"`
 }
 
 func ApiSuccess(data any) BaseResponse {
