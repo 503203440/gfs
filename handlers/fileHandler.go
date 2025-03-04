@@ -183,8 +183,13 @@ func UploadNoName(c *fiber.Ctx) error {
 		// 更新token使用情况
 		usedToken(tokenEntity.ID)
 	}
+	// 如果本次上传的是多个文件则返回数组结构, 如果只有一个文件则直接返回此文件url
+	if len(urls) == 1 {
+		return c.JSON(models.ApiSuccess(urls[0]))
+	} else {
+		return c.JSON(models.ApiSuccess(urls))
+	}
 
-	return c.JSON(models.ApiSuccess(urls))
 }
 
 // 返回结果包含名称
