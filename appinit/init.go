@@ -7,21 +7,24 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var staticFS embed.FS
 
-func AppInit(fs *embed.FS) (*os.File, *os.File) {
+// app初始化方法,返回accessLog提供给fiber的access日志输出
+func AppInit(fs *embed.FS) {
 
 	staticFS = *fs
 
-	// 初始化日志
-	LogFile, accessLogFile := initLogs("./gfs.log", "./access.log")
+	// 设置系统日志输出
+	log.SetOutput(models.NewMultiWrite(AppLogWrite, os.Stdout))
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	// 释放static文件目录
 	extractStatic()
 
-	return LogFile, accessLogFile
 }
 
 // go内嵌当前程序下某个文件夹或文件的命令
@@ -31,6 +34,22 @@ func AppInit(fs *embed.FS) (*os.File, *os.File) {
 // 获取可执行文件所在目录
 var ExePath, _ = os.Executable()
 var BaseDir = filepath.Dir(ExePath)
+var gfsLogPath = filepath.Join(BaseDir, "gfs.log")
+var accessLogPath = filepath.Join(BaseDir, "access.log")
+var AppLogWrite = &lumberjack.Logger{
+	Filename:   gfsLogPath, // 日志文件路径
+	MaxSize:    100,        // 单个文件最大大小（MB）
+	MaxBackups: 3,          // 最大保留备份文件数
+	MaxAge:     30,         // 文件最大保留天数
+	Compress:   true,       // 是否压缩旧文件
+}
+var AccessLogWrite = &lumberjack.Logger{
+	Filename:   accessLogPath, // 日志文件路径
+	MaxSize:    100,             // 单个文件最大大小（MB）
+	MaxBackups: 3,             // 最大保留备份文件数
+	MaxAge:     30,            // 文件最大保留天数
+	Compress:   true,          // 是否压缩旧文件
+}
 
 func extractStatic() {
 
@@ -73,20 +92,4 @@ func copyStaticFiles(staticDir string) error {
 			return os.WriteFile(targetPath, data, 0644)
 		}
 	})
-}
-
-func initLogs(logFilePath, accessLogFilePath string) (*os.File, *os.File) {
-	gfsLogFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		panic("创建系统日志文件失败: " + err.Error())
-	}
-	log.SetOutput(models.NewMultiWrite(gfsLogFile, os.Stdout))
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
-	accessLogfile, err := os.OpenFile(accessLogFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-	if err != nil {
-		panic("创建访问日志文件失败: " + err.Error())
-	}
-
-	return gfsLogFile, accessLogfile
 }

@@ -23,10 +23,7 @@ var staticFS embed.FS
 func main() {
 
 	// app初始化方法
-	LogFile, accessLogFile := appinit.AppInit(&staticFS) // 将embed.FS对象的内存地址传给appinit方法
-	// main函数结束时释放文件
-	defer accessLogFile.Close()
-	defer LogFile.Close()
+	appinit.AppInit(&staticFS) // 将embed.FS对象的内存地址传给appinit方法
 
 	// 获取port参数,如果没有则默认使用8080
 	port := flag.Int("port", 8080, "使用-port=8080设置服务启动参数")
@@ -46,8 +43,8 @@ func main() {
 
 	// 配置fiber的http请求日志
 	app.Use(logger.New(logger.Config{
-		Output:     models.NewMultiWrite(accessLogFile), // 打印到文件
-		TimeFormat: "2006-01-02 15:04:05",               // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
+		Output:     models.NewMultiWrite(appinit.AccessLogWrite), // 打印到文件
+		TimeFormat: "2006-01-02 15:04:05",                        // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
 		Format:     "${time} | ${status} | ${latency} | ${ip} | ${method} | ${path} | ${error}\n",
 	}))
 
