@@ -37,15 +37,14 @@ func init() {
 	// 启动一个goroutine
 	go func() {
 		for {
-			// 查看当前目录中文件数量, 如果已经达到10G,则删除最早的文件
 			err := filepath.Walk(uploadPath, func(path string, info os.FileInfo, err error) error {
 				if err == nil {
 					if !info.IsDir() {
 						modTime := info.ModTime()
 						timeDiff := time.Since(modTime)
-						if timeDiff.Hours() > 24*7 {
+						if timeDiff.Hours() > 24*2 {
 							fileName := info.Name()
-							log.Printf("删除超过7天的文件:filename:%s,modTime:%s", fileName, modTime.Format("2006-01-02 15:04:05"))
+							log.Printf("删除文件:filename:%s,modTime:%s", fileName, modTime.Format("2006-01-02 15:04:05"))
 							os.Remove(path)
 						}
 					}
