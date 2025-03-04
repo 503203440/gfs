@@ -9,6 +9,7 @@ import (
 	"gfs/models"
 	"log"
 	"path"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -16,6 +17,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
+
+var starttime = time.Now().Format("2006-01-02 15:04:05")
 
 //go:embed static
 var staticFS embed.FS
@@ -72,6 +75,11 @@ func main() {
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendFile(path.Join(appinit.BaseDir, "static/index.html"))
 		// return c.SendString("Hello, World!")
+	})
+
+	// 返回当前进程启动时间
+	app.Get("/starttime", func(c *fiber.Ctx) error {
+		return c.JSON(starttime)
 	})
 
 	// 内存信息路由

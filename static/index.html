@@ -13,11 +13,36 @@
             width: 100%;
         }
 
+        #sysCpu,
+        #sysMem {
+            width: 600px;
+            height: 337px;
+        }
+
+        #info {
+            padding-left: 10px;
+            color: #636e72;
+        }
+
+        #info span {
+            margin: 0 5px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: #0984e3;
+            line-height: 30px;
+        }
+
         @media screen and (max-width: 1024px) {
             #box {
                 display: flex;
                 flex-direction: column;
                 width: 100%;
+            }
+
+            #sysCpu,
+            #sysMem {
+                width: 100%;
+                height: 337px;
             }
         }
     </style>
@@ -25,17 +50,37 @@
 
 <body>
     <div id="box">
-        <div id="sysCpu" style="width: 600px;height: 337px;">
+        <div id="sysCpu">
 
         </div>
-        <div id="sysMem" style="width: 600px;height: 337px;">
+        <div id="sysMem">
 
         </div>
+    </div>
+    <div id="info">
+        日期<span id="today"></span>
+        <br>
+        处理数量<span id="total"></span>
+        <br>
+        启动时间<span id="starttime"></span>
     </div>
 </body>
 
 </html>
 <script type="application/javascript">
+
+    fetch("/todayFileTotal").then(res => res.json()).then(res => {
+        console.log(res)
+        let today = res.today
+        let total = res.total
+        document.querySelector('#today').innerHTML = today
+        document.querySelector('#total').innerHTML = total
+    })
+
+    fetch("/starttime").then(res => res.json()).then(res => {
+        document.querySelector('#starttime').innerHTML = res
+    })
+
     const cpuOption = {
         title: {
             text: 'cpu'
