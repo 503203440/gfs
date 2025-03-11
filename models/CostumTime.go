@@ -36,7 +36,6 @@ func (ct *CustomTime) UnmarshalJSON(data []byte) error {
 			return err
 		}
 	} else {
-		log.Println("无法解析json数据，将尝试timestamp模式", err)
 		var timestamp int64
 		if err = json.Unmarshal(data, &timestamp); err == nil {
 			timestampLength := len(strconv.FormatInt(timestamp, 10))
