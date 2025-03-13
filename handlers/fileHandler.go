@@ -91,7 +91,6 @@ func GetSign(c *fiber.Ctx) error {
 			}
 		}
 		clientId := clientInfoEntity.Id
-		log.Println("clientInfo:", *clientInfoEntity.Id, clientInfoEntity.SecertKey)
 
 		// 将body参数转化为map
 		// signData := utils.StructToMap(signVo)
@@ -99,7 +98,6 @@ func GetSign(c *fiber.Ctx) error {
 		signData := make(map[string]any)
 		// 计算签名
 		calculateSignStr := utils.GetSign(signData, clientInfoEntity.SecertKey, utils.HMACSHA256)
-		log.Println("计算签名结果", calculateSignStr)
 		if calculateSignStr != signVo.Sign {
 			return c.JSON(models.ApiError("签名验证不通过"))
 		}
