@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/disintegration/imageorient"
 	"golang.org/x/image/draw"
 )
 
@@ -24,7 +25,7 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 		return errors.New("打开文件失败:" + err.Error())
 	}
 	defer file.Close()
-	img, formatName, err := image.Decode(file)
+	img, formatName, err := imageorient.Decode(file)
 	if err != nil {
 		return errors.New("解码文件失败:" + err.Error())
 	}
