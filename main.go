@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"gfs/appinit"
 	"gfs/handlers"
-	"gfs/models"
+	"io"
 	"log"
 	"path"
 	"time"
@@ -48,8 +48,8 @@ func main() {
 
 	// 配置fiber的http请求日志
 	app.Use(logger.New(logger.Config{
-		Output:     models.NewMultiWrite(appinit.AccessLogWrite), // 打印到文件
-		TimeFormat: "2006-01-02 15:04:05",                        // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
+		Output:     io.MultiWriter(appinit.AccessLogWrite), // 打印到文件
+		TimeFormat: "2006-01-02 15:04:05",                  // Go语言的时间格式化与其他语言不同，它使用一个特定的时间点“2006年1月2日15时04分05秒”来代表格式化模板，其中每个数字部分代表不同的时间单位
 		Format:     "${time} | ${status} | ${latency} | ${ips} | ${method} | ${path} | ${error}\n",
 	}))
 
