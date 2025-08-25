@@ -13,11 +13,11 @@ import (
 
 // 创建一个队列
 var cpuLoadQueue = utils.MyQueue{
-	Size: 20,
+	Size: 60,
 }
 
 var memInfoQueue = utils.MyQueue{
-	Size: 20,
+	Size: 60,
 }
 
 func init() {
