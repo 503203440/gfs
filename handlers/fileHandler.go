@@ -36,13 +36,17 @@ func init() {
 
 	// 启动一个goroutine
 	go func() {
-		for {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		// 每隔5分钟扫描一次文件夹, 删除超过1小时未修改的文件
+		for range ticker.C {
 			err := filepath.Walk(uploadPath, func(path string, info os.FileInfo, err error) error {
 				if err == nil {
 					if !info.IsDir() {
 						modTime := info.ModTime()
 						timeDiff := time.Since(modTime)
-						if timeDiff.Hours() > 24*2 {
+						// 超过1小时未修改,则删除
+						if timeDiff.Hours() > 1 {
 							fileName := info.Name()
 							log.Printf("删除文件:filename:%s,modTime:%s", fileName, modTime.Format("2006-01-02 15:04:05"))
 							os.Remove(path)
@@ -55,10 +59,36 @@ func init() {
 				log.Println("监听文件夹失败!", err)
 				break
 			}
-			// 每小时执行一次
-			time.Sleep(time.Hour)
 		}
 	}()
+
+	// 另一种方式实现同样的功能
+	// go func() {
+	// 	// 每5分钟执行一次
+	// 	for {
+	// 		err := filepath.Walk(uploadPath, func(path string, info os.FileInfo, err error) error {
+	// 			if err == nil {
+	// 				if !info.IsDir() {
+	// 					modTime := info.ModTime()
+	// 					timeDiff := time.Since(modTime)
+	// 					// 超过1小时未修改,则删除
+	// 					if timeDiff.Hours() > 1 {
+	// 						fileName := info.Name()
+	// 						log.Printf("删除文件:filename:%s,modTime:%s", fileName, modTime.Format("2006-01-02 15:04:05"))
+	// 						os.Remove(path)
+	// 					}
+	// 				}
+	// 			}
+	// 			return nil
+	// 		})
+	// 		if err != nil {
+	// 			log.Println("监听文件夹失败!", err)
+	// 			break
+	// 		}
+	// 		// 每5分钟执行一次
+	// 		time.Sleep(time.Minute * 5)
+	// 	}
+	// }()
 
 }
 
