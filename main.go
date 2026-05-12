@@ -36,6 +36,9 @@ func main() {
 	// 执行解析参数
 	flag.Parse()
 
+	// 将端口号传给 handlers，用于按端口过滤 TCP 连接
+	handlers.ServerPort = *port
+
 	// 构建一个fiber实例
 	app := fiber.New(fiber.Config{
 		// json编解码使用go-json更快

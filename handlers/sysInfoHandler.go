@@ -25,6 +25,8 @@ var tcpInfoQueue = utils.MyQueue{
 	Size: 60,
 }
 
+var ServerPort int
+
 func init() {
 	// 方案一: 使用time.Ticker实现定时
 	// ticker := time.NewTicker(time.Second)
@@ -67,10 +69,16 @@ func init() {
 			}
 
 			tcpConns, err := net.Connections("tcp")
-			if err == nil {
+			if err == nil && ServerPort > 0 {
+				count := 0
+				for _, conn := range tcpConns {
+					if conn.Laddr.Port == uint32(ServerPort) {
+						count++
+					}
+				}
 				tcpItem := map[string]any{
 					"time":    nowTimeStr,
-					"tcpConn": len(tcpConns),
+					"tcpConn": count,
 				}
 				tcpInfoQueue.Enqueue(tcpItem)
 			}
