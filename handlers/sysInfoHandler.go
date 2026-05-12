@@ -12,17 +12,20 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 )
 
+// 24小时 ≈ 86400 秒
+const queueSize24h = 86400
+
 // 创建一个队列
 var cpuLoadQueue = utils.MyQueue{
-	Size: 60,
+	Size: queueSize24h,
 }
 
 var memInfoQueue = utils.MyQueue{
-	Size: 60,
+	Size: queueSize24h,
 }
 
 var tcpInfoQueue = utils.MyQueue{
-	Size: 60,
+	Size: queueSize24h,
 }
 
 var ServerPort int
@@ -114,17 +117,32 @@ func Gc(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"before": before, "after": after})
 }
 
+// 降采样：数据超过 maxPoints 条时，均匀跳着取，保证返回 ≈maxPoints 条
+func downsample(data []any, maxPoints int) []any {
+	if len(data) <= maxPoints {
+		return data
+	}
+	step := float64(len(data)) / float64(maxPoints)
+	result := make([]any, 0, maxPoints)
+	for i := 0; i < len(data); i++ {
+		if float64(i) >= float64(len(result))*step-0.5 {
+			result = append(result, data[i])
+		}
+	}
+	return result
+}
+
 // cpu使用率
 func CpuInfo(c *fiber.Ctx) error {
-	return c.JSON(cpuLoadQueue.List())
+	return c.JSON(downsample(cpuLoadQueue.List(), 500))
 }
 
 // 系统内存使用率
 func MemInfo(c *fiber.Ctx) error {
-	return c.JSON(memInfoQueue.List())
+	return c.JSON(downsample(memInfoQueue.List(), 500))
 }
 
 // TCP连接数
 func TcpInfo(c *fiber.Ctx) error {
-	return c.JSON(tcpInfoQueue.List())
+	return c.JSON(downsample(tcpInfoQueue.List(), 500))
 }
