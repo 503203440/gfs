@@ -91,6 +91,8 @@ func main() {
 	// cpu信息路由
 	app.All("/cpuInfo", handlers.CpuInfo)
 	app.All("/memInfo", handlers.MemInfo)
+	// tcp连接数路由
+	app.All("/tcpInfo", handlers.TcpInfo)
 
 	// 每日文件数量统计路由
 	app.All("/todayFileTotal", handlers.TodayFileTotal)

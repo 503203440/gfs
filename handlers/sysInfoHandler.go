@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/net"
 )
 
 // 创建一个队列
@@ -17,6 +18,10 @@ var cpuLoadQueue = utils.MyQueue{
 }
 
 var memInfoQueue = utils.MyQueue{
+	Size: 60,
+}
+
+var tcpInfoQueue = utils.MyQueue{
 	Size: 60,
 }
 
@@ -60,6 +65,15 @@ func init() {
 				}
 				memInfoQueue.Enqueue(item)
 			}
+
+			tcpConns, err := net.Connections("tcp")
+			if err == nil {
+				tcpItem := map[string]any{
+					"time":    nowTimeStr,
+					"tcpConn": len(tcpConns),
+				}
+				tcpInfoQueue.Enqueue(tcpItem)
+			}
 			// 这里就不要time.Sleep了,因为cpu.Percent(time.Second, false)方法本身就会阻塞1秒钟
 			// time.Sleep(time.Second)
 		}
@@ -100,4 +114,9 @@ func CpuInfo(c *fiber.Ctx) error {
 // 系统内存使用率
 func MemInfo(c *fiber.Ctx) error {
 	return c.JSON(memInfoQueue.List())
+}
+
+// TCP连接数
+func TcpInfo(c *fiber.Ctx) error {
+	return c.JSON(tcpInfoQueue.List())
 }
