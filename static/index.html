@@ -283,7 +283,7 @@
             borderColor: 'rgba(0, 217, 255, 0.3)',
             textStyle: { color: '#fff' },
             formatter: function (params) {
-                return `CPU: ${params[0]?.value[1] ?? 0}%`
+                return `CPU: ${(params[0]?.value[1] ?? 0).toFixed(2)}%`
             }
         },
         grid: { top: 20, right: 20, bottom: 30, left: 50 },
@@ -423,7 +423,7 @@
                 array.push({ name: 'cpuLoad', value: [i.time, i.cpuLoad] })
             })
             if (array.length > 0) {
-                document.querySelector('#cpuValue').innerHTML = array[array.length - 1].value[1].toFixed(1)
+                document.querySelector('#cpuValue').innerHTML = array[array.length - 1].value[1].toFixed(2)
             }
             cpuChart.setOption({ series: [{ data: array }] })
         })
