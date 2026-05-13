@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GFS 监控</title>
     <script src="/static/echarts.min.js"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -283,7 +282,9 @@
             borderColor: 'rgba(0, 217, 255, 0.3)',
             textStyle: { color: '#fff' },
             formatter: function (params) {
-                return `CPU: ${(params[0]?.value[1] ?? 0).toFixed(2)}%`
+                const time = new Date(params[0]?.value[0])
+                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`
+                return `${timeStr}<br/>CPU: ${(params[0]?.value[1] ?? 0).toFixed(2)}%`
             }
         },
         grid: { top: 20, right: 20, bottom: 30, left: 50 },
@@ -331,7 +332,9 @@
             borderColor: 'rgba(0, 255, 136, 0.3)',
             textStyle: { color: '#fff' },
             formatter: function (params) {
-                return `内存: ${params[0]?.value[1] ?? 0}%`
+                const time = new Date(params[0]?.value[0])
+                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`
+                return `${timeStr}<br/>内存: ${params[0]?.value[1] ?? 0}%`
             }
         },
         grid: { top: 20, right: 20, bottom: 30, left: 50 },
@@ -378,7 +381,9 @@
             borderColor: 'rgba(192, 132, 252, 0.3)',
             textStyle: { color: '#fff' },
             formatter: function (params) {
-                return `TCP连接数: ${params[0]?.value[1] ?? 0}`
+                const time = new Date(params[0]?.value[0])
+                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`
+                return `${timeStr}<br/>TCP连接数: ${params[0]?.value[1] ?? 0}`
             }
         },
         grid: { top: 20, right: 20, bottom: 30, left: 50 },
