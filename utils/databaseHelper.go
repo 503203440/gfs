@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"context"
 	"gfs/appinit"
 	"gfs/models"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/glebarez/sqlite"
@@ -14,18 +16,33 @@ import (
 
 var DbConnect *gorm.DB
 
+// 静音 sys_metric 表的 SQL 日志
+type silentMetricLogger struct {
+	logger.Interface
+}
+
+func (l *silentMetricLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
+	sql, rows := fc()
+	if strings.Contains(sql, "sys_metric") {
+		return
+	}
+	l.Interface.Trace(ctx, begin, func() (string, int64) { return sql, rows }, err)
+}
+
 func init() {
 	var err error
 	DbConnect, err = gorm.Open(sqlite.Open("./flx.db?_journal_mode=WAL"), &gorm.Config{
 		// Logger: logger.Default.LogMode(logger.Info),
-		Logger: logger.New(
-			log.New(
-				models.NewMultiWrite(appinit.AppLogWrite, os.Stdout),
-				"\r\n",
-				log.LstdFlags,
+		Logger: &silentMetricLogger{
+			logger.New(
+				log.New(
+					models.NewMultiWrite(appinit.AppLogWrite, os.Stdout),
+					"\r\n",
+					log.LstdFlags,
+				),
+				logger.Config{LogLevel: logger.Info},
 			),
-			logger.Config{LogLevel: logger.Info},
-		),
+		},
 	})
 	if err != nil {
 		log.Fatal("数据库连接失败")
@@ -44,4 +61,5 @@ func init() {
 	DbConnect.AutoMigrate(&models.FileInfo{})
 	DbConnect.AutoMigrate(&models.ClientInfoEntity{})
 	DbConnect.AutoMigrate(&models.TokenEntity{})
+	DbConnect.AutoMigrate(&models.SysMetric{})
 }

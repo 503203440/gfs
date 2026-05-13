@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"gfs/models"
 	"gfs/utils"
 	"log"
 	"runtime"
@@ -36,6 +38,48 @@ const cpuEmaAlpha = 0.3
 // 上一次 EMA 平滑后的 CPU 值
 var cpuEmaValue float64
 
+func saveMetric(metricType string, timestamp string, value any) {
+	jsonBytes, err := json.Marshal(value)
+	if err != nil {
+		log.Printf("序列化 %s 指标失败: %v", metricType, err)
+		return
+	}
+	t, err := time.Parse("2006-01-02 15:04:05", timestamp)
+	if err != nil {
+		log.Printf("解析 %s 时间失败: %v", metricType, err)
+		return
+	}
+	metric := models.SysMetric{
+		Type:      metricType,
+		Timestamp: t,
+		Value:     string(jsonBytes),
+	}
+	if err := utils.DbConnect.Create(&metric).Error; err != nil {
+		log.Printf("保存 %s 指标到数据库失败: %v", metricType, err)
+	}
+}
+
+func loadMetricsFromDB(metricType string, limit int) []any {
+	var metrics []models.SysMetric
+	result := utils.DbConnect.Where("type = ?", metricType).
+		Order("timestamp desc").
+		Limit(limit).
+		Find(&metrics)
+	if result.Error != nil {
+		log.Printf("从数据库加载 %s 指标失败: %v", metricType, result.Error)
+		return nil
+	}
+	items := make([]any, 0, len(metrics))
+	for i := len(metrics) - 1; i >= 0; i-- {
+		var value map[string]any
+		if err := json.Unmarshal([]byte(metrics[i].Value), &value); err != nil {
+			continue
+		}
+		items = append(items, value)
+	}
+	return items
+}
+
 func init() {
 	// 方案一: 使用time.Ticker实现定时
 	// ticker := time.NewTicker(time.Second)
@@ -46,6 +90,21 @@ func init() {
 	// }()
 
 	// 方案二: 使用time.Sleep
+
+	// 从数据库恢复最近24小时数据到队列
+	if utils.DbConnect != nil {
+		for _, item := range loadMetricsFromDB("cpu", queueSize24h) {
+			cpuLoadQueue.Enqueue(item)
+		}
+		for _, item := range loadMetricsFromDB("mem", queueSize24h) {
+			memInfoQueue.Enqueue(item)
+		}
+		for _, item := range loadMetricsFromDB("tcp", queueSize24h) {
+			tcpInfoQueue.Enqueue(item)
+		}
+		log.Println("已从数据库恢复历史监控数据")
+	}
+
 	go func() {
 		for {
 			// do something
@@ -61,6 +120,7 @@ func init() {
 					"cpuLoad": cpuEmaValue,
 				}
 				cpuLoadQueue.Enqueue(item)
+				saveMetric("cpu", nowTimeStr, item)
 			}
 			memInfo, err := mem.VirtualMemory()
 			if err == nil {
@@ -78,6 +138,7 @@ func init() {
 					},
 				}
 				memInfoQueue.Enqueue(item)
+				saveMetric("mem", nowTimeStr, item)
 			}
 
 			tcpConns, err := net.Connections("tcp")
@@ -93,6 +154,7 @@ func init() {
 					"tcpConn": count,
 				}
 				tcpInfoQueue.Enqueue(tcpItem)
+				saveMetric("tcp", nowTimeStr, tcpItem)
 			}
 			// 这里就不要time.Sleep了,因为cpu.Percent(time.Second, false)方法本身就会阻塞1秒钟
 			// time.Sleep(time.Second)
