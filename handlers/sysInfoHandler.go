@@ -30,6 +30,12 @@ var tcpInfoQueue = utils.MyQueue{
 
 var ServerPort int
 
+// EMA 平滑系数，越小越平滑，0.3 是监控场景的常用值
+const cpuEmaAlpha = 0.3
+
+// 上一次 EMA 平滑后的 CPU 值
+var cpuEmaValue float64
+
 func init() {
 	// 方案一: 使用time.Ticker实现定时
 	// ticker := time.NewTicker(time.Second)
@@ -46,10 +52,13 @@ func init() {
 			percent, err := cpu.Percent(time.Second, false)
 			nowTimeStr := time.Now().Format("2006-01-02 15:04:05")
 			if err == nil && len(percent) > 0 {
-				// 写入一个进入队列
+				// EMA 平滑：smoothed = α * raw + (1 - α) * prevSmoothed
+				raw := percent[0]
+				cpuEmaValue = cpuEmaAlpha*raw + (1-cpuEmaAlpha)*cpuEmaValue
+				// 写入平滑后的值到队列
 				item := map[string]any{
 					"time":    nowTimeStr,
-					"cpuLoad": percent[0],
+					"cpuLoad": cpuEmaValue,
 				}
 				cpuLoadQueue.Enqueue(item)
 			}
