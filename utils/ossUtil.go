@@ -21,11 +21,9 @@ var OssFolder string = "GPAI5"                  // 默认文件夹
 var OssFolderCompress string = "GPAI5_Compress" // 默认压缩文件夹
 
 // 替换为我司cdn域名
-var reg *regexp.Regexp
+var reg, _ = regexp.Compile(`\b[a-z0-9A-Z-\.]+\.aliyuncs\.com`)
 
 func init() {
-
-	reg, _ = regexp.Compile(`\b[a-z0-9A-Z-\.]+\.aliyuncs\.com`)
 
 	// 从配置文件获取oss配置信息, 读取当前目录下的oss.properties文件
 	ossPropertiesPath := path.Join(appinit.BaseDir, "oss.properties")
