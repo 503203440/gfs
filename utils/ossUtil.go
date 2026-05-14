@@ -1,10 +1,8 @@
 package utils
 
 import (
-	"bytes"
 	"context"
 	"gfs/appinit"
-	"io"
 	"log"
 	"os"
 	"path"
@@ -65,16 +63,12 @@ func UploadFile(objectName, localFilePath string) (string, error) {
 		log.Println("打开文件失败!", err)
 		return "", err
 	}
-	byteArray, err := io.ReadAll(file)
-	if err != nil {
-		log.Println("读取文件失败!", err)
-		return "", err
-	}
+
 	log.Println(bucketName, objectName)
 	_, err = OssClient.PutObject(context.TODO(), &oss.PutObjectRequest{
 		Bucket: oss.Ptr(bucketName),
 		Key:    oss.Ptr(objectName),
-		Body:   bytes.NewReader(byteArray),
+		Body:   file,
 	})
 	if err != nil {
 		log.Println("文件上传失败!", err)
