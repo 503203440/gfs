@@ -1,468 +1,535 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GFS 监控</title>
-    <script src="/static/echarts.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            color: #e4e4e4;
-            padding: 24px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 32px;
-            animation: fadeInDown 0.6s ease-out;
-        }
-
-        .header h1 {
-            font-size: 2.2rem;
-            font-weight: 600;
-            background: linear-gradient(90deg, #00d9ff, #00ff88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .charts-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin-bottom: 32px;
-            animation: fadeInUp 0.6s ease-out 0.4s both;
-        }
-
-        .chart-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 24px;
-            transition: all 0.3s ease;
-        }
-
-        .chart-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .chart-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .chart-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chart-title .material-icons {
-            font-size: 24px;
-        }
-
-        .chart-title h3 {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #fff;
-        }
-
-        .chart-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .chart-value.cpu {
-            color: #00d9ff;
-        }
-
-        .chart-value.mem {
-            color: #00ff88;
-        }
-
-        .chart-value.tcp {
-            color: #c084fc;
-        }
-
-        .chart-value span {
-            font-size: 0.9rem;
-            font-weight: 400;
-            color: #8892b0;
-        }
-
-        .chart-body {
-            height: 280px;
-            width: 100%;
-            border-radius: 12px;
-            position: relative;
-        }
-
-        .info-bar {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            flex-wrap: wrap;
-            animation: fadeInUp 0.6s ease-out 0.4s both;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 16px 28px;
-            transition: all 0.3s ease;
-        }
-
-        .info-item:hover {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .info-item .material-icons {
-            font-size: 22px;
-        }
-
-        .info-label {
-            font-size: 0.85rem;
-            color: #8892b0;
-        }
-
-        .info-value {
-            font-size: 1rem;
-            color: #fff;
-            font-weight: 600;
-        }
-
-        #sysCpu, #sysMem, #sysTcp {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GFS 监控</title>
+        <script src="/static/echarts.min.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media screen and (max-width: 1024px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media screen and (max-width: 640px) {
             body {
-                padding: 16px;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+                background: linear-gradient(
+                    135deg,
+                    #1a1a2e 0%,
+                    #16213e 50%,
+                    #0f3460 100%
+                );
+                min-height: 100vh;
+                color: #e4e4e4;
+                padding: 24px;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 32px;
+                animation: fadeInDown 0.6s ease-out;
             }
 
             .header h1 {
-                font-size: 1.6rem;
+                font-size: 2.2rem;
+                font-weight: 600;
+                background: linear-gradient(90deg, #00d9ff, #00ff88);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .charts-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+                margin-bottom: 32px;
+                animation: fadeInUp 0.6s ease-out 0.4s both;
+            }
+
+            .chart-card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                padding: 24px;
+                transition: all 0.3s ease;
+            }
+
+            .chart-card:hover {
+                border-color: rgba(255, 255, 255, 0.2);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            }
+
+            .chart-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+            }
+
+            .chart-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .chart-title .material-icons {
+                font-size: 24px;
+            }
+
+            .chart-title h3 {
+                font-size: 1.1rem;
+                font-weight: 500;
+                color: #fff;
             }
 
             .chart-value {
-                font-size: 1.4rem;
+                font-size: 1.8rem;
+                font-weight: 700;
+            }
+
+            .chart-value.cpu {
+                color: #00d9ff;
+            }
+
+            .chart-value.mem {
+                color: #00ff88;
+            }
+
+            .chart-value.tcp {
+                color: #c084fc;
+            }
+
+            .chart-value span {
+                font-size: 0.9rem;
+                font-weight: 400;
+                color: #8892b0;
             }
 
             .chart-body {
-                height: 220px;
+                height: 280px;
+                width: 100%;
+                border-radius: 12px;
+                position: relative;
             }
+
+            .info-bar {
+                display: flex;
+                justify-content: center;
+                gap: 24px;
+                flex-wrap: wrap;
+                animation: fadeInUp 0.6s ease-out 0.4s both;
+            }
+
+            .info-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                padding: 16px 28px;
+                transition: all 0.3s ease;
+            }
+
+            .info-item:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.08);
+            }
+
+            .info-item .material-icons {
+                font-size: 22px;
+            }
+
+            .info-label {
+                font-size: 0.85rem;
+                color: #8892b0;
+            }
+
+            .info-value {
+                font-size: 1rem;
+                color: #fff;
+                font-weight: 600;
+            }
+
+            #sysCpu,
+            #sysMem,
+            #sysTcp {
+                width: 100%;
+                height: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+
+            @keyframes fadeInDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @media screen and (max-width: 1024px) {
+                .charts-container {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @media screen and (max-width: 640px) {
+                body {
+                    padding: 16px;
+                }
+
+                .header h1 {
+                    font-size: 1.6rem;
+                }
+
+                .chart-value {
+                    font-size: 1.4rem;
+                }
+
+                .chart-body {
+                    height: 220px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="header">
+            <h1>GFS 监控</h1>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <span class="material-icons" style="color: #00d9ff"
+                            >cpu</span
+                        >
+                        <!--<h3>CPU 使用率</h3>-->
+                    </div>
+                    <div class="chart-value cpu">
+                        <span id="cpuValue">0</span><span>%</span>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div id="sysCpu"></div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <span class="material-icons" style="color: #00ff88"
+                            >memory</span
+                        >
+                        <!--<h3>内存占用</h3>-->
+                    </div>
+                    <div class="chart-value mem">
+                        <span id="memValue">0</span><span>%</span>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div id="sysMem"></div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <span class="material-icons" style="color: #c084fc"
+                            >lan</span
+                        >
+                        <!--<h3>TCP 连接数</h3>-->
+                    </div>
+                    <div class="chart-value tcp">
+                        <span id="tcpValue">0</span>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div id="sysTcp"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-item">
+                <span class="material-icons" style="color: #00d9ff">today</span>
+                <span class="info-label">今日处理</span>
+                <span class="info-value" id="total">--</span>
+            </div>
+            <div class="info-item">
+                <span class="material-icons" style="color: #ffd93d"
+                    >schedule</span
+                >
+                <span class="info-label">启动时间</span>
+                <span class="info-value" id="starttime">--</span>
+            </div>
+        </div>
+    </body>
+    <script type="application/javascript">
+        fetch("/todayFileTotal")
+            .then((res) => res.json())
+            .then((res) => {
+                document.querySelector("#total").innerHTML = res.total;
+            });
+
+        fetch("/starttime")
+            .then((res) => res.json())
+            .then((res) => {
+                document.querySelector("#starttime").innerHTML = res;
+            });
+
+        const cpuOption = {
+            backgroundColor: "transparent",
+            title: { show: false },
+            tooltip: {
+                trigger: "axis",
+                backgroundColor: "rgba(22, 33, 62, 0.95)",
+                borderColor: "rgba(0, 217, 255, 0.3)",
+                textStyle: { color: "#fff" },
+                formatter: function (params) {
+                    const time = new Date(params[0]?.value[0]);
+                    const timeStr = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}:${time.getSeconds().toString().padStart(2, "0")}`;
+                    return `${timeStr}<br/>CPU: ${(params[0]?.value[1] ?? 0).toFixed(2)}%`;
+                },
+            },
+            grid: { top: 20, right: 20, bottom: 30, left: 50 },
+            xAxis: {
+                type: "time",
+                axisLine: { lineStyle: { color: "rgba(255,255,255,0.1)" } },
+                axisLabel: { color: "#8892b0", interval: 40, rotate: 45 },
+                splitLine: { show: false },
+            },
+            yAxis: {
+                type: "value",
+                min: 0,
+                max: 100,
+                axisLine: { lineStyle: { color: "rgba(255,255,255,0.1)" } },
+                axisLabel: { color: "#8892b0", formatter: "{value}%" },
+                splitLine: { lineStyle: { color: "rgba(255,255,255,0.05)" } },
+            },
+            series: [
+                {
+                    name: "CPU",
+                    type: "line",
+                    smooth: true,
+                    symbol: "none",
+                    lineStyle: { color: "#00d9ff", width: 2 },
+                    areaStyle: {
+                        color: {
+                            type: "linear",
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [
+                                { offset: 0, color: "rgba(0, 217, 255, 0.4)" },
+                                { offset: 1, color: "rgba(0, 217, 255, 0)" },
+                            ],
+                        },
+                    },
+                    data: [],
+                },
+            ],
+        };
+
+        const cpuChart = echarts.init(document.getElementById("sysCpu"));
+        cpuChart.setOption(cpuOption);
+
+        const memOption = {
+            backgroundColor: "transparent",
+            title: { show: false },
+            tooltip: {
+                trigger: "axis",
+                backgroundColor: "rgba(22, 33, 62, 0.95)",
+                borderColor: "rgba(0, 255, 136, 0.3)",
+                textStyle: { color: "#fff" },
+                formatter: function (params) {
+                    const time = new Date(params[0]?.value[0]);
+                    const timeStr = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}:${time.getSeconds().toString().padStart(2, "0")}`;
+                    return `${timeStr}<br/>内存: ${(params[0]?.value[1] ?? 0).toFixed(2)}%`;
+                },
+            },
+            grid: { top: 20, right: 20, bottom: 30, left: 50 },
+            xAxis: {
+                type: "time",
+                axisLine: { lineStyle: { color: "rgba(255,255,255,0.1)" } },
+                axisLabel: { color: "#8892b0", interval: 40, rotate: 45 },
+                splitLine: { show: false },
+            },
+            yAxis: {
+                type: "value",
+                min: 0,
+                max: 100,
+                axisLine: { lineStyle: { color: "rgba(255,255,255,0.1)" } },
+                axisLabel: { color: "#8892b0", formatter: "{value}%" },
+                splitLine: { lineStyle: { color: "rgba(255,255,255,0.05)" } },
+            },
+            series: [
+                {
+                    name: "内存",
+                    type: "line",
+                    smooth: true,
+                    symbol: "none",
+                    lineStyle: { color: "#00ff88", width: 2 },
+                    areaStyle: {
+                        color: {
+                            type: "linear",
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [
+                                { offset: 0, color: "rgba(0, 255, 136, 0.4)" },
+                                { offset: 1, color: "rgba(0, 255, 136, 0)" },
+                            ],
+                        },
+                    },
+                    data: [],
+                },
+            ],
+        };
+        const memChart = echarts.init(document.getElementById("sysMem"));
+        memChart.setOption(memOption);
+
+        const tcpOption = {
+            backgroundColor: "transparent",
+            title: { show: false },
+            tooltip: {
+                trigger: "axis",
+                backgroundColor: "rgba(22, 33, 62, 0.95)",
+                borderColor: "rgba(192, 132, 252, 0.3)",
+                textStyle: { color: "#fff" },
+                formatter: function (params) {
+                    const time = new Date(params[0]?.value[0]);
+                    const timeStr = `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}:${time.getSeconds().toString().padStart(2, "0")}`;
+                    return `${timeStr}<br/>TCP连接数: ${params[0]?.value[1] ?? 0}`;
+                },
+            },
+            grid: { top: 20, right: 20, bottom: 30, left: 50 },
+            xAxis: {
+                type: "time",
+                axisLine: { lineStyle: { color: "rgba(255,255,255,0.1)" } },
+                axisLabel: { color: "#8892b0", interval: 40, rotate: 45 },
+                splitLine: { show: false },
+            },
+            yAxis: {
+                type: "value",
+                min: 0,
+                axisLine: { lineStyle: { color: "rgba(255,255,255,0.1)" } },
+                axisLabel: { color: "#8892b0" },
+                splitLine: { lineStyle: { color: "rgba(255,255,255,0.05)" } },
+            },
+            series: [
+                {
+                    name: "TCP连接数",
+                    type: "line",
+                    smooth: true,
+                    symbol: "none",
+                    lineStyle: { color: "#c084fc", width: 2 },
+                    areaStyle: {
+                        color: {
+                            type: "linear",
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [
+                                {
+                                    offset: 0,
+                                    color: "rgba(192, 132, 252, 0.4)",
+                                },
+                                { offset: 1, color: "rgba(192, 132, 252, 0)" },
+                            ],
+                        },
+                    },
+                    data: [],
+                },
+            ],
+        };
+        const tcpChart = echarts.init(document.getElementById("sysTcp"));
+        tcpChart.setOption(tcpOption);
+
+        function getSysInfo() {
+            fetch("/cpuInfo")
+                .then((res) => res.json())
+                .then((res) => {
+                    let array = [];
+                    res?.forEach((i) => {
+                        array.push({
+                            name: "cpuLoad",
+                            value: [i.time, i.cpuLoad],
+                        });
+                    });
+                    if (array.length > 0) {
+                        document.querySelector("#cpuValue").innerHTML =
+                            array[array.length - 1].value[1].toFixed(2);
+                    }
+                    cpuChart.setOption({ series: [{ data: array }] });
+                });
+
+            fetch("/memInfo")
+                .then((res) => res.json())
+                .then((res) => {
+                    let array = [];
+                    res?.forEach((i) => {
+                        array.push({
+                            name: "memLoad",
+                            value: [i.time, i.memInfo?.usedPercent],
+                        });
+                    });
+                    if (array.length > 0) {
+                        document.querySelector("#memValue").innerHTML =
+                            array[array.length - 1].value[1].toFixed(2);
+                    }
+                    memChart.setOption({ series: [{ data: array }] });
+                });
+
+            fetch("/tcpInfo")
+                .then((res) => res.json())
+                .then((res) => {
+                    let array = [];
+                    res?.forEach((i) => {
+                        array.push({
+                            name: "tcpConn",
+                            value: [i.time, i.tcpConn],
+                        });
+                    });
+                    if (array.length > 0) {
+                        document.querySelector("#tcpValue").innerHTML =
+                            array[array.length - 1].value[1];
+                    }
+                    tcpChart.setOption({ series: [{ data: array }] });
+                });
         }
-    </style>
-</head>
 
-<body>
-    <div class="header">
-        <h1>GFS 监控</h1>
-    </div>
+        getSysInfo();
+        setInterval(getSysInfo, 1000);
 
-    <div class="charts-container">
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="chart-title">
-                    <span class="material-icons" style="color: #00d9ff;">memory</span>
-                    <h3>CPU 使用率</h3>
-                </div>
-                <div class="chart-value cpu"><span id="cpuValue">0</span><span>%</span></div>
-            </div>
-            <div class="chart-body">
-                <div id="sysCpu"></div>
-            </div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="chart-title">
-                    <span class="material-icons" style="color: #00ff88;">storage</span>
-                    <h3>内存占用</h3>
-                </div>
-                <div class="chart-value mem"><span id="memValue">0</span><span>%</span></div>
-            </div>
-            <div class="chart-body">
-                <div id="sysMem"></div>
-            </div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-header">
-                <div class="chart-title">
-                    <span class="material-icons" style="color: #c084fc;">lan</span>
-                    <h3>TCP 连接数</h3>
-                </div>
-                <div class="chart-value tcp"><span id="tcpValue">0</span></div>
-            </div>
-            <div class="chart-body">
-                <div id="sysTcp"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="info-bar">
-        <div class="info-item">
-            <span class="material-icons" style="color: #00d9ff;">today</span>
-            <span class="info-label">今日处理</span>
-            <span class="info-value" id="total">--</span>
-        </div>
-        <div class="info-item">
-            <span class="material-icons" style="color: #ffd93d;">schedule</span>
-            <span class="info-label">启动时间</span>
-            <span class="info-value" id="starttime">--</span>
-        </div>
-    </div>
-</body>
-<script type="application/javascript">
-    fetch("/todayFileTotal").then(res => res.json()).then(res => {
-        document.querySelector('#total').innerHTML = res.total
-    })
-
-    fetch("/starttime").then(res => res.json()).then(res => {
-        document.querySelector('#starttime').innerHTML = res
-    })
-
-    const cpuOption = {
-        backgroundColor: 'transparent',
-        title: { show: false },
-        tooltip: {
-            trigger: 'axis',
-            backgroundColor: 'rgba(22, 33, 62, 0.95)',
-            borderColor: 'rgba(0, 217, 255, 0.3)',
-            textStyle: { color: '#fff' },
-            formatter: function (params) {
-                const time = new Date(params[0]?.value[0])
-                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`
-                return `${timeStr}<br/>CPU: ${(params[0]?.value[1] ?? 0).toFixed(2)}%`
-            }
-        },
-        grid: { top: 20, right: 20, bottom: 30, left: 50 },
-        xAxis: {
-            type: 'time',
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: '#8892b0', interval: 40, rotate: 45 },
-            splitLine: { show: false }
-        },
-        yAxis: {
-            type: 'value',
-            min: 0, max: 100,
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: '#8892b0', formatter: '{value}%' },
-            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
-        },
-        series: [{
-            name: 'CPU',
-            type: 'line',
-            smooth: true,
-            symbol: 'none',
-            lineStyle: { color: '#00d9ff', width: 2 },
-            areaStyle: {
-                color: {
-                    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-                    colorStops: [
-                        { offset: 0, color: 'rgba(0, 217, 255, 0.4)' },
-                        { offset: 1, color: 'rgba(0, 217, 255, 0)' }
-                    ]
-                }
-            },
-            data: []
-        }]
-    }
-
-    const cpuChart = echarts.init(document.getElementById('sysCpu'));
-    cpuChart.setOption(cpuOption)
-
-    const memOption = {
-        backgroundColor: 'transparent',
-        title: { show: false },
-        tooltip: {
-            trigger: 'axis',
-            backgroundColor: 'rgba(22, 33, 62, 0.95)',
-            borderColor: 'rgba(0, 255, 136, 0.3)',
-            textStyle: { color: '#fff' },
-            formatter: function (params) {
-                const time = new Date(params[0]?.value[0])
-                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`
-                return `${timeStr}<br/>内存: ${params[0]?.value[1] ?? 0}%`
-            }
-        },
-        grid: { top: 20, right: 20, bottom: 30, left: 50 },
-        xAxis: {
-            type: 'time',
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: '#8892b0', interval: 40, rotate: 45 },
-            splitLine: { show: false }
-        },
-        yAxis: {
-            type: 'value',
-            min: 0, max: 100,
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: '#8892b0', formatter: '{value}%' },
-            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
-        },
-        series: [{
-            name: '内存',
-            type: 'line',
-            smooth: true,
-            symbol: 'none',
-            lineStyle: { color: '#00ff88', width: 2 },
-            areaStyle: {
-                color: {
-                    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-                    colorStops: [
-                        { offset: 0, color: 'rgba(0, 255, 136, 0.4)' },
-                        { offset: 1, color: 'rgba(0, 255, 136, 0)' }
-                    ]
-                }
-            },
-            data: []
-        }]
-    }
-    const memChart = echarts.init(document.getElementById('sysMem'));
-    memChart.setOption(memOption)
-
-    const tcpOption = {
-        backgroundColor: 'transparent',
-        title: { show: false },
-        tooltip: {
-            trigger: 'axis',
-            backgroundColor: 'rgba(22, 33, 62, 0.95)',
-            borderColor: 'rgba(192, 132, 252, 0.3)',
-            textStyle: { color: '#fff' },
-            formatter: function (params) {
-                const time = new Date(params[0]?.value[0])
-                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')}`
-                return `${timeStr}<br/>TCP连接数: ${params[0]?.value[1] ?? 0}`
-            }
-        },
-        grid: { top: 20, right: 20, bottom: 30, left: 50 },
-        xAxis: {
-            type: 'time',
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: '#8892b0', interval: 40, rotate: 45 },
-            splitLine: { show: false }
-        },
-        yAxis: {
-            type: 'value',
-            min: 0,
-            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-            axisLabel: { color: '#8892b0' },
-            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
-        },
-        series: [{
-            name: 'TCP连接数',
-            type: 'line',
-            smooth: true,
-            symbol: 'none',
-            lineStyle: { color: '#c084fc', width: 2 },
-            areaStyle: {
-                color: {
-                    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-                    colorStops: [
-                        { offset: 0, color: 'rgba(192, 132, 252, 0.4)' },
-                        { offset: 1, color: 'rgba(192, 132, 252, 0)' }
-                    ]
-                }
-            },
-            data: []
-        }]
-    }
-    const tcpChart = echarts.init(document.getElementById('sysTcp'));
-    tcpChart.setOption(tcpOption)
-
-    function getSysInfo() {
-        fetch('/cpuInfo').then(res => res.json()).then(res => {
-            let array = []
-            res?.forEach(i => {
-                array.push({ name: 'cpuLoad', value: [i.time, i.cpuLoad] })
-            })
-            if (array.length > 0) {
-                document.querySelector('#cpuValue').innerHTML = array[array.length - 1].value[1].toFixed(2)
-            }
-            cpuChart.setOption({ series: [{ data: array }] })
-        })
-
-        fetch('/memInfo').then(res => res.json()).then(res => {
-            let array = []
-            res?.forEach(i => {
-                array.push({ name: 'memLoad', value: [i.time, i.memInfo?.usedPercent] })
-            })
-            if (array.length > 0) {
-                document.querySelector('#memValue').innerHTML = array[array.length - 1].value[1].toFixed(1)
-            }
-            memChart.setOption({ series: [{ data: array }] })
-        })
-
-        fetch('/tcpInfo').then(res => res.json()).then(res => {
-            let array = []
-            res?.forEach(i => {
-                array.push({ name: 'tcpConn', value: [i.time, i.tcpConn] })
-            })
-            if (array.length > 0) {
-                document.querySelector('#tcpValue').innerHTML = array[array.length - 1].value[1]
-            }
-            tcpChart.setOption({ series: [{ data: array }] })
-        })
-    }
-
-    getSysInfo()
-    setInterval(getSysInfo, 1000)
-
-    window.addEventListener('resize', () => {
-        cpuChart.resize()
-        memChart.resize()
-        tcpChart.resize()
-    })
-</script>
+        window.addEventListener("resize", () => {
+            cpuChart.resize();
+            memChart.resize();
+            tcpChart.resize();
+        });
+    </script>
 </html>
