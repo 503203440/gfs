@@ -365,8 +365,8 @@ func UploadNotCompress(c *fiber.Ctx) error {
 
 // 压缩并上传文件, 返回压缩后的url
 func composeAndUpload(sourceImgPath, randFileName string) (*string, error) {
-	extName := path.Ext(sourceImgPath)
-	if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == "bmp" {
+	extName := strings.ToLower(path.Ext(sourceImgPath))
+	if extName == ".png" || extName == ".jpg" || extName == ".jpeg" || extName == ".bmp" {
 		width, err := utils.ImageWidth(sourceImgPath)
 		if width <= 1000 || err != nil {
 			return nil, errors.New("文件宽度不足或无法读取文件宽度信息")
