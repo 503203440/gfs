@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gfs/appinit"
 	"gfs/handlers"
+	"gfs/utils"
 	"io"
 	"log"
 	"path"
@@ -27,6 +28,9 @@ func main() {
 
 	// app初始化方法
 	appinit.AppInit(&staticFS) // 将embed.FS对象的内存地址传给appinit方法
+
+	// 启动定时清理任务（每天0点删除sys_metric中24小时前的数据）
+	utils.StartCleanupTask()
 
 	// 获取port参数,如果没有则默认使用8080
 	port := flag.Int("port", 8080, "使用-port=8080设置服务启动参数")
