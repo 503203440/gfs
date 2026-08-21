@@ -1,6 +1,6 @@
 module gfs
 
-go 1.23.6
+go 1.27.0
 
 require (
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.2.0
