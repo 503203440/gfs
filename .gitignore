@@ -5,3 +5,5 @@ gfs
 flx.db
 file-uploads/
 oss.properties
+*-shm
+*-wal
