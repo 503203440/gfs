@@ -17,11 +17,21 @@ func StartCleanupTask() {
 			time.Sleep(next.Sub(now))
 
 			cutoff := time.Now().Add(-7 * 24 * time.Hour)
+			// 1. 清理 7 天前的 sys_metric 监控指标数据
 			result := DbConnect.Exec("DELETE FROM sys_metric WHERE timestamp < ?", cutoff)
 			if result.Error != nil {
 				log.Printf("[cleanup] 删除 sys_metric 失败: %v", result.Error)
 			} else {
 				log.Printf("[cleanup] sys_metric 清理完成，删除了 %d 条记录", result.RowsAffected)
+			}
+
+			// 2. 清理 7 天前已使用或已过期的 token 记录，防止 token_entity 表无限膨胀
+			cutoffTimeStr := cutoff.Format("2006-01-02 15:04:05")
+			tokenResult := DbConnect.Exec("DELETE FROM token_entity WHERE used = 1 OR expires_time < ?", cutoffTimeStr)
+			if tokenResult.Error != nil {
+				log.Printf("[cleanup] 删除过期 token 失败: %v", tokenResult.Error)
+			} else if tokenResult.RowsAffected > 0 {
+				log.Printf("[cleanup] token_entity 清理完成，删除了 %d 条记录", tokenResult.RowsAffected)
 			}
 		}
 	}()

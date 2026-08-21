@@ -24,9 +24,9 @@ static/              → embedded web UI (index.html + echarts), extracted on fi
 
 ## Key initialization order (happens via `init()` + explicit calls)
 1. `appinit.AppInit()` — sets up lumberjack loggers (`gfs.log`, `access.log`), extracts embedded `static/` to executable directory
-2. `utils/databaseHelper.go init()` — opens SQLite `./flx.db` (WAL mode), AutoMigrates 4 tables
+2. `utils/databaseHelper.go init()` — opens SQLite `appinit.BaseDir/flx.db` (WAL mode, busy_timeout=5000, synchronous=NORMAL), AutoMigrates 4 tables
 3. `utils/ossUtil.go init()` — reads `oss.properties` from executable directory; if missing, `OssClient` stays nil and uploads fall back to local paths
-4. `utils.StartCleanupTask()` — daily midnight goroutine deleting `sys_metric` rows older than 7 days
+4. `utils.StartCleanupTask()` — daily midnight goroutine deleting `sys_metric` and expired `token_entity` rows older than 7 days
 5. `handlers/fileHandler.go init()` — creates `file-uploads/` dir, starts goroutine deleting uploaded files older than 1 hour (scans every 5 min)
 
 ## Runtime behavior
@@ -50,7 +50,7 @@ static/              → embedded web UI (index.html + echarts), extracted on fi
 | `oss.properties` | OSS credentials (read-only, not created) |
 
 ## Gotchas
-- DB path `./flx.db` is relative to **working directory**, not executable directory. Most other paths use `appinit.BaseDir` (executable dir).
+- DB path uses `filepath.Join(appinit.BaseDir, "flx.db")` located in the executable directory alongside other runtime files.
 - `oss.properties` is gitignored but the repo contains a copy with **real credentials**. Do not commit or expose.
 - Module name `gfs` means imports are `gfs/appinit`, `gfs/handlers`, etc. — not a github.com path.
 - No `go vet`, `golangci-lint`, or formatter configured. Follow existing style.

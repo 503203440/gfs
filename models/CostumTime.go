@@ -67,26 +67,61 @@ func (ct CustomTime) Value() (driver.Value, error) {
 
 // Scanner 接口：从数据库读取值并转换为 CustomTime
 func (ct *CustomTime) Scan(value interface{}) error {
-	// 在 Go 语言中，value.(time.Time) 是类型断言（Type Assertion）的语法。
-	// 它的作用是尝试将一个接口类型的变量 value 断言为具体的类型 time.Time。
-	// 如果断言成功，value 会被转换为 time.Time 类型；如果失败，则会引发错误
-	t, ok := value.(time.Time)
-	if !ok {
-		// return fmt.Errorf("failed to convert %T to CustomTime", value)
-		var timestamp int64
-		timestamp, ok = value.(int64)
-		if !ok {
-			return fmt.Errorf("failed to convert %T to CustomTime", value)
-		}
-		timestampLength := len(strconv.FormatInt(timestamp, 10))
-		if timestampLength >= 13 { // 如果你看到一个时间戳是10位数，那么很可能是秒级时间戳；如果是13位数，则很可能是毫秒级时间戳。
-			// 毫秒
-			ct.Time = time.UnixMilli(timestamp)
-		} else {
-			// 秒
-			ct.Time = time.Unix(timestamp, 0)
-		}
+	if value == nil {
+		ct.Time = time.Time{}
+		return nil
 	}
-	ct.Time = t
-	return nil
+
+	// 兼容 SQLite 及不同驱动读取时的多种可能数据类型
+	switch v := value.(type) {
+	case time.Time:
+		ct.Time = v
+		return nil
+
+	case int64:
+		// 数字时间戳（秒级 10 位 / 毫秒级 13 位）
+		timestampLength := len(strconv.FormatInt(v, 10))
+		if timestampLength >= 13 {
+			ct.Time = time.UnixMilli(v)
+		} else {
+			ct.Time = time.Unix(v, 0)
+		}
+		return nil
+
+	case string:
+		// SQLite TEXT 字段可能返回标准日期字符串
+		if v == "" || v == "null" {
+			ct.Time = time.Time{}
+			return nil
+		}
+		layouts := []string{
+			"2006-01-02 15:04:05",
+			time.RFC3339,
+			"2006-01-02T15:04:05Z07:00",
+			"2006-01-02",
+		}
+		for _, layout := range layouts {
+			if t, err := time.Parse(layout, v); err == nil {
+				ct.Time = t
+				return nil
+			}
+		}
+		// 若为数字字符串格式时间戳
+		if ts, err := strconv.ParseInt(v, 10, 64); err == nil {
+			if len(v) >= 13 {
+				ct.Time = time.UnixMilli(ts)
+			} else {
+				ct.Time = time.Unix(ts, 0)
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to parse string '%s' to CustomTime", v)
+
+	case []byte:
+		// 某些 SQLite 驱动将文本或时间返回为 []byte
+		return ct.Scan(string(v))
+
+	default:
+		return fmt.Errorf("failed to convert %T to CustomTime", value)
+	}
 }

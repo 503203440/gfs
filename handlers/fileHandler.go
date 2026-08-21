@@ -422,9 +422,10 @@ func usedToken(id int64) {
 
 // 保存文件信息
 func saveFileInfo(fileInfo *models.FileInfo) {
-	saveResult := utils.DbConnect.Model(&models.FileInfo{}).Save(&fileInfo)
+	// 修正：fileInfo 本身已经是 *models.FileInfo 指针类型，直接传入 fileInfo，避免二级指针 (**models.FileInfo) 引发 GORM 反射异常
+	saveResult := utils.DbConnect.Model(&models.FileInfo{}).Save(fileInfo)
 	if saveResult.Error != nil {
-		log.Println("保存文件引用信息失败!", saveResult)
+		log.Println("保存文件引用信息失败!", saveResult.Error)
 	}
 }
 
