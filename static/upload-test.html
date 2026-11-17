@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GFS 上传测试</title>
+        <style>
+            :root {
+                --cyan: #00d9ff;
+                --green: #00ff88;
+                --red: #ff6b6b;
+                --amber: #ffd93d;
+                --text: #e4e4e4;
+                --muted: #8892b0;
+                --line: rgba(255, 255, 255, 0.1);
+            }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    Roboto, "Helvetica Neue", Arial, sans-serif;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                min-height: 100vh;
+                color: var(--text);
+                padding: 28px 20px 60px;
+            }
+            .wrap { max-width: 860px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 26px; }
+            .header h1 {
+                font-size: 2rem; font-weight: 600;
+                background: linear-gradient(90deg, var(--cyan), var(--green));
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .header .sub { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
+            .header .back {
+                display: inline-block; margin-top: 10px; color: var(--cyan);
+                text-decoration: none; font-size: 0.85rem;
+            }
+            .header .back:hover { text-decoration: underline; }
+            .card {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid var(--line);
+                border-radius: 18px;
+                padding: 22px 24px;
+                margin-bottom: 20px;
+            }
+            .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; color: #fff; }
+            .row { display: flex; gap: 18px; flex-wrap: wrap; }
+            .field { flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; }
+            .field > span { font-size: 0.85rem; color: var(--muted); }
+            input[type="number"], input[type="text"], input[type="password"], select {
+                width: 100%; padding: 11px 13px; border-radius: 10px;
+                border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25);
+                color: var(--text); font-size: 0.95rem; outline: none;
+                transition: border-color 0.2s;
+            }
+            input:focus, select:focus { border-color: var(--cyan); }
+            input::placeholder { color: #6b7594; }
+            .input-with-action { display: flex; gap: 8px; }
+            .mini {
+                padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
+                background: rgba(255, 255, 255, 0.06); color: var(--cyan);
+                cursor: pointer; font-size: 0.8rem; white-space: nowrap;
+            }
+            .mini:hover { background: rgba(255, 255, 255, 0.12); }
+            .switch {
+                display: flex; align-items: center; gap: 8px;
+                margin-top: 16px; font-size: 0.85rem; color: var(--muted); cursor: pointer;
+            }
+            .switch input { accent-color: var(--cyan); }
+            .drop {
+                display: block; border: 2px dashed rgba(0, 217, 255, 0.35);
+                border-radius: 14px; padding: 34px 20px; text-align: center;
+                cursor: pointer; transition: all 0.2s; position: relative;
+            }
+            .drop:hover, .drop.dragover {
+                border-color: var(--cyan); background: rgba(0, 217, 255, 0.08);
+            }
+            .drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+            .drop .icon { font-size: 2rem; color: var(--cyan); }
+            .drop .tip { margin-top: 10px; color: var(--muted); font-size: 0.9rem; }
+            .file-list { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+            .file-item {
+                display: flex; justify-content: space-between; align-items: center;
+                background: rgba(0, 0, 0, 0.2); border-radius: 8px;
+                padding: 8px 12px; font-size: 0.85rem;
+            }
+            .file-item .size { color: var(--muted); }
+            .primary {
+                width: 100%; padding: 13px; border-radius: 10px; border: none;
+                background: linear-gradient(90deg, #00b4d8, #00d9ff);
+                color: #04121f; font-size: 1rem; font-weight: 700; cursor: pointer;
+                transition: opacity 0.2s;
+            }
+            .primary:hover { opacity: 0.9; }
+            .primary:disabled { opacity: 0.45; cursor: not-allowed; }
+            .steps { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+            .step {
+                flex: 1 1 150px; display: flex; align-items: center; gap: 8px;
+                padding: 10px 12px; border-radius: 10px; font-size: 0.85rem;
+                background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line);
+                color: var(--muted); transition: all 0.25s;
+            }
+            .step .dot {
+                width: 10px; height: 10px; border-radius: 50%;
+                background: var(--muted); flex: none;
+            }
+            .step.running { color: var(--amber); border-color: rgba(255, 217, 61, 0.4); }
+            .step.running .dot { background: var(--amber); animation: pulse 1s infinite; }
+            .step.done { color: var(--green); border-color: rgba(0, 255, 136, 0.35); }
+            .step.done .dot { background: var(--green); }
+            .step.fail { color: var(--red); border-color: rgba(255, 107, 107, 0.4); }
+            .step.fail .dot { background: var(--red); }
+            @keyframes pulse { 50% { opacity: 0.3; } }
+            .result-card[hidden] { display: none; }
+            .url-row {
+                display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
+                background: rgba(0, 0, 0, 0.2); border-radius: 10px; padding: 10px 12px;
+            }
+            .url-row a { color: var(--cyan); text-decoration: none; word-break: break-all; flex: 1; font-size: 0.9rem; }
+            .url-row a:hover { text-decoration: underline; }
+            .url-row .copy {
+                padding: 5px 10px; border-radius: 7px; border: 1px solid var(--line);
+                background: rgba(255, 255, 255, 0.06); color: var(--text);
+                cursor: pointer; font-size: 0.75rem; white-space: nowrap;
+            }
+            pre {
+                white-space: pre-wrap; word-break: break-all; font-size: 0.8rem;
+                line-height: 1.6; color: #b8c4dd; max-height: 280px; overflow: auto;
+            }
+            .log-ok { color: var(--green); }
+            .log-err { color: var(--red); }
+            .log-info { color: var(--cyan); }
+            @media screen and (max-width: 640px) { .row { flex-direction: column; } }
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <div class="header">
+                <h1>GFS 上传测试</h1>
+                <p class="sub">填写凭据 → 选择文件 → 自动签名 → 获取 Token → 上传 → 返回 URL</p>
+                <a class="back" href="/">← 返回监控页</a>
+            </div>
+
+            <div class="card">
+                <h3>1. 接口凭据</h3>
+                <div class="row">
+                    <label class="field">
+                        <span>ClientId（数据库 client_info_entity 的主键 ID）</span>
+                        <input id="clientId" type="number" min="1" placeholder="例如：1" />
+                    </label>
+                    <label class="field">
+                        <span>SecretKey（与该 ClientId 对应的密钥）</span>
+                        <span class="input-with-action">
+                            <input id="secretKey" type="password" placeholder="填写 SecretKey" />
+                            <button type="button" id="toggleSecret" class="mini">显示</button>
+                        </span>
+                    </label>
+                </div>
+                <div class="row" style="margin-top: 16px">
+                    <label class="field">
+                        <span>上传接口</span>
+                        <select id="endpoint">
+                            <option value="/upload">/upload（返回 URL，支持多文件）</option>
+                            <option value="/uploadImgs">/uploadImgs（返回文件名 + URL）</option>
+                            <option value="/uploadNotCompress">/uploadNotCompress（不压缩，单文件）</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>过期时间（可选，留空则不限）</span>
+                        <input id="expiresTime" type="text" placeholder="格式：2026-12-31 23:59:59" />
+                    </label>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="autoUpload" checked />
+                    <span>选择文件后自动开始上传</span>
+                </label>
+            </div>
+
+            <div class="card">
+                <h3>2. 选择文件</h3>
+                <label class="drop" id="drop">
+                    <input type="file" id="fileInput" multiple />
+                    <div class="icon">⇪</div>
+                    <div class="tip">点击选择文件，或将文件拖到此处（可多选）</div>
+                </label>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <div class="card">
+                <button id="uploadBtn" class="primary">开始上传</button>
+                <div class="steps">
+                    <div class="step" data-step="1"><span class="dot"></span><span>① 计算签名</span></div>
+                    <div class="step" data-step="2"><span class="dot"></span><span>② 获取 Token</span></div>
+                    <div class="step" data-step="3"><span class="dot"></span><span>③ 上传文件</span></div>
+                </div>
+            </div>
+
+            <div class="card result-card" id="resultCard" hidden>
+                <h3>上传结果</h3>
+                <div id="result"></div>
+            </div>
+
+            <div class="card">
+                <h3>运行日志</h3>
+                <pre id="log">等待操作…</pre>
+            </div>
+        </div>
+
+        <script>
+            /* ---------- 纯 JS 版 SHA-256 / HMAC-SHA256 ----------
+               不依赖 crypto.subtle，保证通过内网 IP（http 非安全上下文）访问时也能算签名 */
+            const K256 = [
+                0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+                0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+                0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+                0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+                0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+                0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+                0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+                0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2,
+            ];
+            const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+
+            function sha256(bytes) {
+                const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+                const bitLen = bytes.length * 8;
+                const oneIdx = bytes.length;
+                const r = (oneIdx + 1) % 64;
+                const zeroCount = r <= 56 ? 56 - r : 120 - r;
+                const total = oneIdx + 1 + zeroCount + 8;
+                const buf = new Uint8Array(total);
+                buf.set(bytes);
+                buf[oneIdx] = 0x80;
+                const dv = new DataView(buf.buffer);
+                dv.setUint32(total - 8, Math.floor(bitLen / 4294967296), false);
+                dv.setUint32(total - 4, bitLen >>> 0, false);
+
+                const w = new Uint32Array(64);
+                for (let off = 0; off < total; off += 64) {
+                    for (let t = 0; t < 16; t++) w[t] = dv.getUint32(off + t * 4, false);
+                    for (let t = 16; t < 64; t++) {
+                        const x = w[t - 15], y = w[t - 2];
+                        const s0 = rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3);
+                        const s1 = rotr(y, 17) ^ rotr(y, 19) ^ (y >>> 10);
+                        w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+                    }
+                    let [a,b,c,d,e,f,g,h] = H;
+                    for (let t = 0; t < 64; t++) {
+                        const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+                        const ch = (e & f) ^ (~e & g);
+                        const t1 = (h + S1 + ch + K256[t] + w[t]) >>> 0;
+                        const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+                        const maj = (a & b) ^ (a & c) ^ (b & c);
+                        const t2 = (S0 + maj) >>> 0;
+                        h = g; g = f; f = e; e = (d + t1) >>> 0;
+                        d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+                    }
+                    H[0]=(H[0]+a)>>>0; H[1]=(H[1]+b)>>>0; H[2]=(H[2]+c)>>>0; H[3]=(H[3]+d)>>>0;
+                    H[4]=(H[4]+e)>>>0; H[5]=(H[5]+f)>>>0; H[6]=(H[6]+g)>>>0; H[7]=(H[7]+h)>>>0;
+                }
+                const out = new Uint8Array(32);
+                const odv = new DataView(out.buffer);
+                for (let i = 0; i < 8; i++) odv.setUint32(i * 4, H[i], false);
+                return out;
+            }
+
+            function hmacSha256(keyBytes, msgBytes) {
+                let k = keyBytes;
+                if (k.length > 64) k = sha256(k);
+                const kp = new Uint8Array(64);
+                kp.set(k);
+                const ipad = new Uint8Array(64), opad = new Uint8Array(64);
+                for (let i = 0; i < 64; i++) {
+                    ipad[i] = kp[i] ^ 0x36;
+                    opad[i] = kp[i] ^ 0x5c;
+                }
+                const inner = new Uint8Array(64 + msgBytes.length);
+                inner.set(ipad); inner.set(msgBytes, 64);
+                const innerHash = sha256(inner);
+                const outer = new Uint8Array(64 + 32);
+                outer.set(opad); outer.set(innerHash, 64);
+                return sha256(outer);
+            }
+
+            // 与后端 utils.GetSign 一致：消息 = "key="+SecretKey，密钥 = SecretKey，结果转大写 HEX
+            function calcSign(secretKey) {
+                const enc = new TextEncoder();
+                const digest = hmacSha256(enc.encode(secretKey), enc.encode("key=" + secretKey));
+                return Array.from(digest).map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+            }
+
+            /* ---------------- 页面逻辑 ---------------- */
+            const $ = (id) => document.getElementById(id);
+            const el = {
+                clientId: $("clientId"), secretKey: $("secretKey"), toggleSecret: $("toggleSecret"),
+                endpoint: $("endpoint"), expiresTime: $("expiresTime"), autoUpload: $("autoUpload"),
+                drop: $("drop"), fileInput: $("fileInput"), fileList: $("fileList"), uploadBtn: $("uploadBtn"),
+                log: $("log"), resultCard: $("resultCard"), result: $("result"),
+                steps: [...document.querySelectorAll(".step")],
+            };
+            const fieldMap = {
+                "/upload": "file",
+                "/uploadImgs": "imgs",
+                "/uploadNotCompress": "file",
+            };
+
+            function log(msg, cls = "") {
+                const line = document.createElement("div");
+                if (cls) line.className = cls;
+                line.textContent = msg;
+                el.log.appendChild(line);
+                el.log.scrollTop = el.log.scrollHeight;
+            }
+            function clearLog() { el.log.innerHTML = ""; }
+            function setStep(n, status) {
+                const node = el.steps[n - 1];
+                node.classList.remove("running", "done", "fail");
+                if (status) node.classList.add(status);
+            }
+            function resetSteps() { el.steps.forEach((s) => setStep(el.steps.indexOf(s) + 1, "")); }
+            function fmtSize(bytes) {
+                if (bytes < 1024) return bytes + " B";
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+                return (bytes / 1024 / 1024).toFixed(2) + " MB";
+            }
+            function renderFileList() {
+                el.fileList.innerHTML = "";
+                [...el.fileInput.files].forEach((f) => {
+                    const item = document.createElement("div");
+                    item.className = "file-item";
+                    item.innerHTML = `<span>${f.name}</span><span class="size">${fmtSize(f.size)}</span>`;
+                    el.fileList.appendChild(item);
+                });
+            }
+
+            async function postJSON(url, body) {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+                return await res.json();
+            }
+            async function postForm(url, formData) {
+                const res = await fetch(url, { method: "POST", body: formData });
+                return await res.json();
+            }
+
+            async function run() {
+                const clientId = el.clientId.value.trim();
+                const secretKey = el.secretKey.value;
+                const files = [...el.fileInput.files];
+                const endpoint = el.endpoint.value;
+
+                clearLog();
+                el.resultCard.hidden = true;
+                el.result.innerHTML = "";
+                resetSteps();
+                el.uploadBtn.disabled = true;
+
+                if (!clientId || !/^\d+$/.test(clientId)) { log("错误：请填写正确的 ClientId（数字）", "log-err"); el.uploadBtn.disabled = false; return; }
+                if (!secretKey) { log("错误：请填写 SecretKey", "log-err"); el.uploadBtn.disabled = false; return; }
+                if (files.length === 0) { log("错误：请先选择文件", "log-err"); el.uploadBtn.disabled = false; return; }
+
+                try {
+                    // ① 计算签名
+                    setStep(1, "running");
+                    const sign = calcSign(secretKey);
+                    log("① 签名计算完成: " + sign, "log-ok");
+                    setStep(1, "done");
+
+                    // ② 获取 token
+                    setStep(2, "running");
+                    const signBody = { clientId: Number(clientId), sign: sign };
+                    const exp = el.expiresTime.value.trim();
+                    if (exp) signBody.expiresTime = exp;
+                    log("② 请求 /sign/getSign: " + JSON.stringify(signBody), "log-info");
+                    const signRes = await postJSON("/sign/getSign", signBody);
+                    log("   响应: " + JSON.stringify(signRes));
+                    if (signRes.code !== "0000" || !signRes.data || !signRes.data.token) {
+                        throw new Error("获取 token 失败: " + (signRes.msg || JSON.stringify(signRes)));
+                    }
+                    const token = signRes.data.token;
+                    log("   Token: " + token, "log-ok");
+                    setStep(2, "done");
+
+                    // ③ 上传文件
+                    setStep(3, "running");
+                    const form = new FormData();
+                    form.append("token", token);
+                    const field = fieldMap[endpoint];
+                    const uploadFiles = endpoint === "/uploadNotCompress" ? files.slice(0, 1) : files;
+                    if (endpoint === "/uploadNotCompress" && files.length > 1) {
+                        log("   提示：/uploadNotCompress 仅支持单文件，已取第一个文件", "log-err");
+                    }
+                    uploadFiles.forEach((f) => form.append(field, f, f.name));
+                    log(`③ 上传 ${uploadFiles.length} 个文件到 ${endpoint}（表单字段: ${field}）`, "log-info");
+                    const upRes = await postForm(endpoint, form);
+                    log("   响应: " + JSON.stringify(upRes));
+                    if (upRes.code !== "0000") {
+                        throw new Error("上传失败: " + (upRes.msg || JSON.stringify(upRes)));
+                    }
+                    setStep(3, "done");
+                    renderResult(upRes.data);
+                    log("完成！", "log-ok");
+                } catch (err) {
+                    const cur = el.steps.findIndex((s) => s.classList.contains("running"));
+                    if (cur >= 0) setStep(cur + 1, "fail");
+                    log("错误: " + err.message, "log-err");
+                } finally {
+                    el.uploadBtn.disabled = false;
+                }
+            }
+
+            function renderResult(data) {
+                const urls = [];
+                if (typeof data === "string") {
+                    urls.push(data);
+                } else if (Array.isArray(data)) {
+                    data.forEach((d) => {
+                        if (typeof d === "string") urls.push(d);
+                        else if (d && d.url) urls.push({ name: d.fileName, url: d.url });
+                    });
+                }
+                urls.forEach((item) => {
+                    const url = typeof item === "string" ? item : item.url;
+                    const name = typeof item === "string" ? "" : item.name;
+                    const row = document.createElement("div");
+                    row.className = "url-row";
+                    const a = document.createElement("a");
+                    a.href = url; a.target = "_blank"; a.rel = "noopener";
+                    a.textContent = (name ? name + "  →  " : "") + url;
+                    const btn = document.createElement("button");
+                    btn.className = "copy"; btn.textContent = "复制";
+                    btn.onclick = async () => {
+                        try { await navigator.clipboard.writeText(url); btn.textContent = "已复制"; }
+                        catch { btn.textContent = "复制失败"; }
+                        setTimeout(() => { btn.textContent = "复制"; }, 1500);
+                    };
+                    row.appendChild(a); row.appendChild(btn);
+                    el.result.appendChild(row);
+                });
+                if (urls.length === 0) {
+                    el.result.textContent = "未解析到 URL，原始返回：" + JSON.stringify(data);
+                }
+                el.resultCard.hidden = false;
+            }
+
+            /* ---------------- 事件绑定 ---------------- */
+            el.toggleSecret.onclick = () => {
+                const show = el.secretKey.type === "password";
+                el.secretKey.type = show ? "text" : "password";
+                el.toggleSecret.textContent = show ? "隐藏" : "显示";
+            };
+            el.fileInput.addEventListener("change", () => {
+                renderFileList();
+                if (el.autoUpload.checked) run();
+            });
+            el.uploadBtn.addEventListener("click", run);
+            ["dragenter", "dragover"].forEach((evt) =>
+                el.drop.addEventListener(evt, (e) => { e.preventDefault(); el.drop.classList.add("dragover"); })
+            );
+            ["dragleave", "drop"].forEach((evt) =>
+                el.drop.addEventListener(evt, (e) => { e.preventDefault(); el.drop.classList.remove("dragover"); })
+            );
+            el.drop.addEventListener("drop", (e) => {
+                const dt = new DataTransfer();
+                [...e.dataTransfer.files].forEach((f) => dt.items.add(f));
+                el.fileInput.files = dt.files;
+                renderFileList();
+                if (el.autoUpload.checked) run();
+            });
+        </script>
+    </body>
+</html>

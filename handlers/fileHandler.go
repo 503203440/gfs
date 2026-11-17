@@ -184,7 +184,7 @@ func UploadNoName(c *fiber.Ctx) error {
 				if utils.OssClient != nil {
 					// 上传到oss
 					ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
-					ossUrl, err := utils.UploadFile(ossKey, saveFilePath)
+					ossUrl, err := utils.UploadFile(ossKey, saveFilePath, f.Filename)
 					if err != nil {
 						log.Println("oss上传失败", err)
 						return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
@@ -260,7 +260,7 @@ func UploadReturnName(c *fiber.Ctx) error {
 				if utils.OssClient != nil {
 					// 上传到oss
 					ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
-					ossUrl, err := utils.UploadFile(ossKey, saveFilePath)
+					ossUrl, err := utils.UploadFile(ossKey, saveFilePath, filename)
 					if err != nil {
 						log.Println("oss上传失败", err)
 						return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
@@ -326,7 +326,7 @@ func UploadNotCompress(c *fiber.Ctx) error {
 			if utils.OssClient != nil {
 				// 上传到oss
 				ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
-				url, err = utils.UploadFile(ossKey, saveFilePath)
+				url, err = utils.UploadFile(ossKey, saveFilePath, sourceFileName)
 				if err != nil {
 					log.Println("oss上传失败", err)
 					return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
@@ -347,7 +347,7 @@ func UploadNotCompress(c *fiber.Ctx) error {
 		if utils.OssClient != nil {
 			// 上传到oss
 			ossKey := path.Join(utils.OssFolder, time.Now().Format("2006-01"), randFileName)
-			url, err = utils.UploadFile(ossKey, saveFilePath)
+			url, err = utils.UploadFile(ossKey, saveFilePath, sourceFileName)
 			if err != nil {
 				log.Println("oss上传失败", err)
 				return c.JSON(models.ApiError("上传OSS失败" + err.Error()))
@@ -381,7 +381,7 @@ func composeAndUpload(sourceImgPath, randFileName string) (*string, error) {
 			// 压缩文件成功
 			ossKey := path.Join(utils.OssFolderCompress, time.Now().Format("2006-01"), randFileName)
 			// 上传一份压缩版,并返回压缩版的值
-			composeUrl, err := utils.UploadFile(ossKey, composeFilePath)
+			composeUrl, err := utils.UploadFile(ossKey, composeFilePath, "")
 			return &composeUrl, err
 		}
 	} else {

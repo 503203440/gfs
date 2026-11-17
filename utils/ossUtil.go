@@ -54,19 +54,26 @@ func init() {
 
 }
 
-func UploadFile(objectName, localFilePath string) (string, error) {
+func UploadFile(objectName, localFilePath, sourceName string) (string, error) {
 
 	file, err := os.OpenFile(localFilePath, os.O_RDONLY, 0666)
 	if err != nil {
 		log.Println("打开文件失败!", err)
 		return "", err
 	}
+	defer file.Close()
+
+	// 只有「内容真实的图片」才 inline 展示；其余（HTML/SVG/JS/伪装文件等）
+	// 一律 application/octet-stream + attachment，让浏览器直接下载而非执行。
+	contentType, disposition := BuildOSSHeaders(DetectSafeImageMIME(objectName, localFilePath), objectName, sourceName)
 
 	log.Println(bucketName, objectName)
 	_, err = OssClient.PutObject(context.TODO(), &oss.PutObjectRequest{
-		Bucket: oss.Ptr(bucketName),
-		Key:    oss.Ptr(objectName),
-		Body:   file,
+		Bucket:             oss.Ptr(bucketName),
+		Key:                oss.Ptr(objectName),
+		Body:               file,
+		ContentType:        oss.Ptr(contentType),
+		ContentDisposition: oss.Ptr(disposition),
 	})
 	if err != nil {
 		log.Println("文件上传失败!", err)
