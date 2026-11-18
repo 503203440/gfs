@@ -320,6 +320,10 @@ func UploadNotCompress(c *fiber.Ctx) error {
 		if fileInfo != nil {
 			// 如果是压缩文件路径则返回非压缩文件路径
 			url = strings.Replace(fileInfo.URL, utils.OssFolderCompress, utils.OssFolder, 1)
+			// BMP 压缩版命名为 <原key>.jpg，去掉转码后缀即可还原原始非压缩对象
+			if strings.HasSuffix(url, ".bmp.jpg") {
+				url = strings.TrimSuffix(url, ".jpg")
+			}
 			// 更新引用次数
 			referenceIncrement(fileInfo)
 		} else {
@@ -371,7 +375,12 @@ func composeAndUpload(sourceImgPath, randFileName string) (*string, error) {
 		if width <= 1000 || err != nil {
 			return nil, errors.New("文件宽度不足或无法读取文件宽度信息")
 		}
-		composeFileName := "compress_" + randFileName
+		// BMP 压缩后统一转 JPEG：扩展名与真实内容一致，且保留原扩展名便于去重时还原原始对象
+		composeRandFileName := randFileName
+		if extName == ".bmp" {
+			composeRandFileName = randFileName + ".jpg"
+		}
+		composeFileName := "compress_" + composeRandFileName
 		composeFilePath := path.Join(uploadPath, composeFileName)
 		// 压缩文件
 		if err := utils.ComposeImg(sourceImgPath, composeFilePath, 1000, false); err != nil {
@@ -379,7 +388,7 @@ func composeAndUpload(sourceImgPath, randFileName string) (*string, error) {
 			return nil, err
 		} else {
 			// 压缩文件成功
-			ossKey := path.Join(utils.OssFolderCompress, time.Now().Format("2006-01"), randFileName)
+			ossKey := path.Join(utils.OssFolderCompress, time.Now().Format("2006-01"), composeRandFileName)
 			// 上传一份压缩版,并返回压缩版的值
 			composeUrl, err := utils.UploadFile(ossKey, composeFilePath, "")
 			return &composeUrl, err

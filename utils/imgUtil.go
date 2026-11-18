@@ -13,8 +13,20 @@ import (
 	"strings"
 
 	"github.com/disintegration/imageorient"
+	_ "golang.org/x/image/bmp" // 注册 BMP 解码器，供 image.Decode/imageorient.Decode 使用
 	"golang.org/x/image/draw"
 )
+
+// encodeImage 按源图格式编码压缩产物。
+// BMP 是无压缩位图，统一转 JPEG 才能真正减小体积；其余非 JPEG 格式保持 PNG。
+func encodeImage(w io.Writer, formatName string, img image.Image) error {
+	switch formatName {
+	case "jpg", "jpeg", "bmp":
+		return jpeg.Encode(w, img, &jpeg.Options{Quality: 90})
+	default:
+		return png.Encode(w, img)
+	}
+}
 
 // 将图片宽度压缩为指定宽度newWidth
 // forceResize 是否强制转换大小, 例如如果图片大小不足newWidth可以执行放大
@@ -55,10 +67,8 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 		newImg := image.NewRGBA(image.Rect(0, 0, newWidth, int(newHeight)))
 		draw.CatmullRom.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
 		// 编码并保存压缩后的图片
-		if formatName == "jpg" || formatName == "jpeg" {
-			jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
-		} else {
-			png.Encode(outFile, newImg)
+		if err := encodeImage(outFile, formatName, newImg); err != nil {
+			return errors.New("编码压缩图片失败:" + err.Error())
 		}
 
 	} else {
@@ -66,7 +76,9 @@ func ComposeImg(imgPath, outputPath string, newWidth int, forceResize bool) erro
 			fmt.Println("宽度不大于目标宽度:", bounds, "执行放大图片操作")
 			newImg := image.NewRGBA(image.Rect(0, 0, newWidth, int(newHeight)))
 			draw.CatmullRom.Scale(newImg, newImg.Bounds(), img, bounds, draw.Over, nil)
-			jpeg.Encode(outFile, newImg, &jpeg.Options{Quality: 90})
+			if err := encodeImage(outFile, formatName, newImg); err != nil {
+				return errors.New("编码压缩图片失败:" + err.Error())
+			}
 		} else {
 			// 保持原大小
 			// newImg := image.NewRGBA(image.Rect(0, 0, width, height))
